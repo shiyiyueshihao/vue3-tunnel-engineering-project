@@ -12,7 +12,24 @@
         <el-table-column :formatter="dataFormater" prop="endTime" label="终止时间" width="150" />
 
         <el-table-column prop="quantity" label="隧道数量" width="120" />
-        <el-table-column prop="status" label="项目状态" width="120" />
+
+        <!-- template #default="scope" 模板写法 1. 标签 (Tag) 2.气泡提示 (Tooltip) -->
+        <el-table-column prop="status" label="项目状态" width="120" >
+            <!-- 气泡提示 (Tooltip) -->
+            <template #default="scope">
+                <el-popover effect="light" trigger="hover" placement="top" width="auto">
+                    <template #default>
+                        <div>name：{{ scope.row.status === 1 ? '已完结'  : '施工中...'}}</div>
+                        <div>address：{{ scope.row.address }}</div>
+                    </template>
+                    <!-- 标签 (Tag) -->
+                    <template #reference>
+                        <el-tag>{{ scope.row.status === 1 ? '已完结'  : '施工中...'}}</el-tag>
+                    </template>
+                </el-popover>
+            </template>
+        </el-table-column>
+
         <el-table-column show-overflow-tooltip prop="remark" label="备注" />
     </el-table>
 </template>
