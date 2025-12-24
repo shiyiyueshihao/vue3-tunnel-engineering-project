@@ -1,0 +1,60 @@
+import { number } from 'echarts'
+import axios from '../utils/request.ts'
+import base from './base.ts'
+
+interface PostLoginParams {
+    username: string | number,
+    password: string | number
+}
+interface pageParams {
+    page: number
+}
+
+const api = {
+    /**
+     *  登录
+    */
+    getLogin(params: PostLoginParams) {
+        // console.log(params)  // 打印测试 显示账号密码说明前端没问题
+        return axios.post(base.baseURL + base.login, params)
+    },
+
+    /**
+     *  用户权限
+    */
+
+    getRouter(params: object) {
+        return axios.get(base.baseURL + base.router, {
+            params
+        })
+    },
+
+    /**
+     *  echarts 图表 line图表
+    */
+    getEchartsLine() {
+        return axios.get(base.baseURL + base.line)
+    },
+
+    /**
+     *  echarts 图表 pie 图表
+    */
+    getEchartsPie() {
+        return axios.get(base.baseURL + base.pie)
+    },
+
+    /**
+     *  echarts 图表 pie 图表
+    */
+    getProjectInfo(params: pageParams) {
+        return axios.get(base.baseURL + base.projectInfo, {
+            params
+        })
+    }
+
+
+
+
+}
+
+export default api

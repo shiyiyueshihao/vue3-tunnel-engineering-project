@@ -1,0 +1,27 @@
+//  sass 混合  @mixin 定义混合(加参数) @include 使用
+@mixin custom-media($min: null, $max: null) {
+    //  初始化媒体查询条件
+    $query: "screen";
+
+    //  若传入 min 参数，拼接 min-width 条件
+    @if $min !=null {
+        $query : $query + " and (min-width:#{$min}px)";
+    }
+
+    //  若传入 max 参数，拼接 max-width 条件
+    @if $max !=null {
+
+        // 判断是否需要加 "and "（依赖 $min 是否存在）
+        @if $min !=null {
+            $query: $query + " and ";
+        }
+
+        // 拼接 max-width 条件
+        $query: $query + "(max-width:#{$max}px)";
+    }
+
+    //  生成最终的 @media 语句，并容纳后续样式( @content 是混合红的 "内容插槽")
+    @media #{$query} {
+        @content;
+    }
+}
