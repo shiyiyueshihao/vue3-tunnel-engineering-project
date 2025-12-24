@@ -159,10 +159,10 @@ router.get("/project/search", (req, res) => {
 })
 
 /**
- *      获得总页数
+ *      获得总条数据
  */
 
-router.get("/project/totalpages", (req, res) => {
+router.get("/project/total", (req, res) => {
     const sql = "select count(*) from project where id";
     SQLConnect(sql, null, result => {
         if (result.length > 0) {

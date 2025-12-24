@@ -10,6 +10,8 @@ const base = {
     line: '/api/line',                                               //       获取 line  图表数据
     pie:'/api/pie',                                                 //        获取 pie 图表数据
     projectInfo:"/api/project/all",                        //        获取 分页 信息  --  项目基础信息    
+    search:"/api/project/search",                         //        隧道模糊查询
+    total:"/api/project/total",                                //        获取数据总条数
 }
 
 export default base

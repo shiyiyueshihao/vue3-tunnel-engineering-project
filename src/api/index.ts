@@ -50,7 +50,23 @@ const api = {
         return axios.get(base.baseURL + base.projectInfo, {
             params
         })
-    }
+    },
+
+    /**
+     *  模糊查询
+    */
+    getSearch(params: any) {
+        return axios.get(base.baseURL + base.search, {
+            params
+        })
+    },
+
+    /**
+     *  获取数据总条数
+    */
+    getTotal() {
+        return axios.get(base.baseURL + base.total)
+    },
 
 
 

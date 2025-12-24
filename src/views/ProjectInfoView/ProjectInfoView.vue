@@ -1,4 +1,19 @@
 <template>
+    <!-- 搜索 -->
+    <div class="search">
+        <el-form class="search-form" @submit.prevent :model="projectInfo.list" label-width="auto"
+            style="max-width: 600px">
+            <el-form-item label="项目状态：" class="search-input">
+                <el-input @keyup.enter="onSearch" v-model="searchInfo" placeholder="请输入想要搜索的信息" />
+            </el-form-item>
+            <el-form-item class="search-button">
+                <el-button type="primary" plain @click="onSearch">搜索</el-button>
+                <el-button type="primary" plain>添加</el-button>
+            </el-form-item>
+        </el-form>
+    </div>
+
+
     <!-- projectInfo.list 就是你网络拿到的对象数据 -->
     <el-table :data="projectInfo.list" style="width: 100%;" :stripe="true"
         :header-cell-style="{ backgroundColor: '#e6f7ff', color: '#0050b3', borderColor: '#91d5ff', fontSize: '16px' }">
@@ -46,12 +61,19 @@
             </template>
         </el-table-column>
     </el-table>
+
+    <!-- 分页 -->
+    <div class="page">
+        <el-pagination background layout="prev, pager, next,jumper" :total="totalPages" :default-page-size="15"
+            @current-change="pageChangeHandler" />
+    </div>
+
 </template>
 
 <script setup lang="ts">
 
 import api from '@/api/index.ts'
-import { onMounted, reactive } from 'vue';
+import { onMounted, reactive, ref } from 'vue';
 //  自己封装工具
 import { dataFormater } from '@/utils/utils.ts'
 
@@ -59,6 +81,11 @@ const projectInfo = reactive({
     list: []
 })
 
+//      v-model 双向绑定
+const searchInfo = ref('')
+
+//  创建分页总数
+const totalPages = ref<number>(0)
 
 // const dataFormater = (row: any, column: any, timestamp: any, index: number) => {
 
@@ -71,8 +98,23 @@ const projectInfo = reactive({
 // }
 
 
+//  初始获取 第一页数据  --  倒序
 onMounted(() => {
     getPagesDate(1)
+})
+
+onMounted(() => {
+    api.getTotal().then((res) => {
+        if (res.data.status === 200) {
+            // console.log(res.data.result);           //          [{  0 ：{ count(*) : 41} }]
+            // console.log(res.data.result[0]['count(*)']);
+            //  一页有 15 条数据 所以向上取整
+            totalPages.value = res.data.result[0]['count(*)']
+            console.log(totalPages.value);
+        } else {
+            totalPages.value = 0
+        }
+    })
 })
 
 /**
@@ -110,5 +152,67 @@ function handleDelete(index: number, row: object) {
 }
 
 
+/**
+ *        分页处理函数
+ */
+
+function pageChangeHandler(value: number) {
+    getPagesDate(value)
+
+}
+
+
+/**
+ *      搜索 处理
+*/
+function onSearch() {
+    console.log("触发搜索");
+    api.getSearch({ search: searchInfo.value }).then(res => {
+        console.log(res.data.result);
+
+        //      如果输入框  的 内容 为 空  则返回第一页数据 这样就OK了
+        if (!searchInfo.value) {
+            pageChangeHandler(1)
+        }
+
+        //      如果输入框有内容  则模糊查询
+        if (searchInfo.value) {
+            if (res.data.status === 200) {
+                projectInfo.list = res.data.result
+            } else {
+                projectInfo.list = []
+            }
+        }
+
+    })
+}
+
+
 </script>
-<style scoped lang="scss"></style>
+<style scoped lang="scss">
+.search {
+    width: 100%;
+    background-color: #fff;
+    padding-left: 20px;
+    box-sizing: border-box;
+
+    .search-form {
+        display: flex;
+        height: 50px;
+        line-height: 50px;
+
+        .search-input {
+            display: flex;
+            align-items: center;
+            font-weight: 800;
+        }
+    }
+}
+
+.page {
+    position: absolute;
+    right: 20px;
+    // bottom: 100px;
+    top: 820px;
+}
+</style>
