@@ -14,17 +14,18 @@
         <el-table-column prop="quantity" label="隧道数量" width="120" />
 
         <!-- template #default="scope" 模板写法 1. 标签 (Tag) 2.气泡提示 (Tooltip) -->
-        <el-table-column prop="status" label="项目状态" width="120" >
+        <el-table-column prop="status" label="项目状态" width="120">
             <!-- 气泡提示 (Tooltip) -->
             <template #default="scope">
                 <el-popover effect="light" trigger="hover" placement="top" width="auto">
                     <template #default>
-                        <div>name：{{ scope.row.status === 1 ? '已完结'  : '施工中...'}}</div>
+                        <div>name：{{ scope.row.status === 1 ? '已完结' : '施工中...' }}</div>
                         <div>address：{{ scope.row.address }}</div>
                     </template>
                     <!-- 标签 (Tag) -->
                     <template #reference>
-                        <el-tag>{{ scope.row.status === 1 ? '已完结'  : '施工中...'}}</el-tag>
+                        <el-tag :type="scope.row.status === 1 ? 'success' : 'info'">{{ scope.row.status === 1 ? '已完结' :
+                            '施工中...'}}</el-tag>
                     </template>
                 </el-popover>
             </template>
@@ -39,7 +40,7 @@
 import api from '@/api/index.ts'
 import { onMounted, reactive } from 'vue';
 //  自己封装工具
-import {dataFormater} from '@/utils/utils.ts'
+import { dataFormater } from '@/utils/utils.ts'
 
 const projectInfo = reactive({
     list: []
