@@ -119,16 +119,16 @@ router.get("/project/all", (req, res) => {
     var page = url.parse(req.url, true).query.page || 1;
     //  sql 查询语句    --   查询  project 数据库 倒序 并且每次都是查询15个数据  偏移量 为 (page - 1) * 15
     const sql = "select * from project order by id desc limit 15 offset " + (page - 1) * 15;
-    SQLConnect(sql,null,result =>{
-        if(result.length > 0){
+    SQLConnect(sql, null, result => {
+        if (result.length > 0) {
             res.send({
-                status:200,
+                status: 200,
                 result
             })
-        }else{
+        } else {
             res.send({
-                status:500,
-                msg:"暂无信息"
+                status: 500,
+                msg: "暂无信息"
             })
         }
     })
@@ -138,27 +138,46 @@ router.get("/project/all", (req, res) => {
 /**
  *      隧道模糊查询
  */
-router.get("/project/search",(req,res) =>{
+router.get("/project/search", (req, res) => {
     //  接收参数：查询内容
-    const search = url.parse(req.url,true).query.search;
+    const search = url.parse(req.url, true).query.search;
     //  模糊查询sql语句编写  name number address remark
     const sql = "select * from project where concat(`name`,`number`,`address`,`remark`) like '%" + search + "%' ";
-    SQLConnect(sql,null,result =>{
-        if(result.length > 0){
+    SQLConnect(sql, null, result => {
+        if (result.length > 0) {
             res.send({
-                status:200,
+                status: 200,
                 result
             })
-        }else{
+        } else {
             res.send({
-                status:500,
-                msg:"暂无数据"
+                status: 500,
+                msg: "暂无数据"
             })
         }
     })
 })
 
+/**
+ *      获得总页数
+ */
 
+router.get("/project/totalpages", (req, res) => {
+    const sql = "select count(*) from project where id";
+    SQLConnect(sql, null, result => {
+        if (result.length > 0) {
+            res.send({
+                status: 200,
+                result
+            })
+        } else {
+            res.send({
+                status: 500,
+                msg: "暂无数据"
+            })
+        }
+    })
+})
 
 //  导出 router 让外部可以访问
 // module.exports = router
