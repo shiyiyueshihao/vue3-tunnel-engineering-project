@@ -135,6 +135,30 @@ router.get("/project/all", (req, res) => {
 })
 
 
+/**
+ *      隧道模糊查询
+ */
+router.get("/project/search",(req,res) =>{
+    //  接收参数：查询内容
+    const search = url.parse(req.url,true).query.search;
+    //  模糊查询sql语句编写  name number address remark
+    const sql = "select * from project where concat(`name`,`number`,`address`,`remark`) like '%" + search + "%' ";
+    SQLConnect(sql,null,result =>{
+        if(result.length > 0){
+            res.send({
+                status:200,
+                result
+            })
+        }else{
+            res.send({
+                status:500,
+                msg:"暂无数据"
+            })
+        }
+    })
+})
+
+
 
 //  导出 router 让外部可以访问
 // module.exports = router
