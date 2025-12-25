@@ -1,5 +1,6 @@
 <template>
-    <!-- 搜索 -->
+
+    <!-- 搜索 和 添加 -->
     <div class="search">
         <el-form class="search-form" @submit.prevent :model="projectInfo.list" label-width="auto"
             style="max-width: 600px">
@@ -8,11 +9,27 @@
             </el-form-item>
             <el-form-item class="search-button">
                 <el-button type="primary" plain @click="onSearch">搜索</el-button>
-                <el-button type="primary" plain>添加</el-button>
+                <el-button type="primary" plain @click="dialogVisible = true">添加</el-button>
             </el-form-item>
         </el-form>
     </div>
 
+    <!-- 对话框 -->
+    <el-dialog v-model="dialogVisible" title="添加隧道项目" width="500" :before-close="handleClose">
+        <!-- 多个输入框信息开始 -->
+
+        <span>This is a message</span>
+
+        <!-- 多个输入框信息结束 -->
+        <template #footer>
+            <div class="dialog-footer">
+                <el-button @click="dialogVisible = false">取消</el-button>
+                <el-button type="primary" @click="addProjectInfo">
+                    确定
+                </el-button>
+            </div>
+        </template>
+    </el-dialog>
 
     <!-- projectInfo.list 就是你网络拿到的对象数据 -->
     <el-table :data="projectInfo.list" style="width: 100%;" :stripe="true"
@@ -187,6 +204,30 @@ function onSearch() {
     })
 }
 
+//  对话框 默认不显示  --  点击添加 将此改为true
+const dialogVisible = ref<boolean>(false)
+
+/**
+ *      关闭对话框(不是取消也不是确定)  的处理函数
+*/
+import { ElMessageBox } from 'element-plus'
+const handleClose = (done: () => void) => {
+    ElMessageBox.confirm('尚未保存，确定关闭？')
+        .then(() => {
+            done()
+        })
+        .catch(() => {
+            // catch error
+        })
+}
+
+/**
+ *          添加  按钮  核心业务逻辑函数
+*/
+
+function addProjectInfo(){
+    //  对象的形式添加了 调用API 然后传入对象 属性有很多
+}
 
 </script>
 <style scoped lang="scss">
