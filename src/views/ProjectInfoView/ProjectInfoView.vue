@@ -105,7 +105,7 @@
 
 
             <el-form-item label="项目状态" class="form-item fom-item-9">
-                <el-select v-model="formInfo.status" placeholder="请选择项目状态" clearable >
+                <el-select v-model="formInfo.status" placeholder="请选择项目状态" clearable>
                     <el-option label="施工中" value="UnderConstruction" />
                     <el-option label="已完结" value="Finished" />
                 </el-select>
@@ -252,12 +252,23 @@ const dialogVisible = ref<boolean>(false)
 */
 import { ElMessageBox } from 'element-plus'
 const handleClose = (done: () => void) => {
-    ElMessageBox.confirm('尚未保存，确定关闭？')
+    ElMessageBox.confirm(
+        '尚未保存，确定关闭？',
+        '提示', // 建议加上标题，显得更正式
+        {
+            confirmButtonText: '确定',
+            cancelButtonText: '取消',
+            type: 'warning', // 加上这个会有一个黄色的警告图标，更好看
+        }
+    )
         .then(() => {
+            //  挂载外部的 确定按钮 事件 --  暂时还未完成其功能
+            addProjectInfo(formInfo)
+
             done()
         })
         .catch(() => {
-            // catch error
+            // 用户点击取消，什么都不做，留在当前页面
         })
 }
 
