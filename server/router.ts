@@ -179,6 +179,40 @@ router.get("/project/total", (req, res) => {
     })
 })
 
+/** 
+ *      隧道项目基础信息 添加 功能
+*/
+
+router.get('/project/add', (req, res) => {
+    //      添加   可以为空
+    var name = url.parse(req.url, true).query.name || "";
+    var code = url.parse(req.url, true).query.code || "";
+    var money = url.parse(req.url, true).query.money || "";
+    var address = url.parse(req.url, true).query.address || "";
+    var duration = url.parse(req.url, true).query.duration || "";
+    var startTime = url.parse(req.url, true).query.startTime || "";
+    var endTime = url.parse(req.url, true).query.endTime || "";
+    var tunnelNumber = url.parse(req.url, true).query.tunnelNumber || "";
+    var status = url.parse(req.url, true).query.status || "";
+    var remark = url.parse(req.url, true).query.remark || "";
+    const sql = "insert into project values (null,?,?,?,?,?,?,?,?,?,?)";
+    const arr = [name, code, money, address, duration, startTime, endTime, tunnelNumber, status, remark]
+    SQLConnect(sql, arr, result => {
+        if (result.affectedRows > 0) {
+            res.send({
+                status: 200,
+                msg: "添加成功"
+            })
+        } else {
+            res.send({
+                status:500,
+                msg:"添加失败"
+            })
+        }
+    })
+})
+
+
 //  导出 router 让外部可以访问
 // module.exports = router
 export default router //      --   ts写法

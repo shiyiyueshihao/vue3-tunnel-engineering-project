@@ -103,8 +103,11 @@
                     clearable />
             </el-form-item>
 
+            <el-form-item label="备注" class="form-item fom-item-9">
+                <el-input v-model="formInfo.remark" placeholder="请输入数量" clearable />
+            </el-form-item>
 
-            <el-form-item label="项目状态" class="form-item fom-item-9">
+            <el-form-item label="项目状态" class="form-item fom-item-10">
                 <el-select v-model="formInfo.status" placeholder="请选择项目状态" clearable>
                     <el-option label="施工中" value="UnderConstruction" />
                     <el-option label="已完结" value="Finished" />
@@ -285,7 +288,8 @@ const formInfo = reactive({
     startTime: "",
     endTime: "",
     tunnelNumber: "",
-    status: ""
+    status: "",
+    remark: "",
 })
 
 function addProjectInfo() {
