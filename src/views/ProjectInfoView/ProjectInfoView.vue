@@ -14,35 +14,18 @@
         </el-form>
     </div>
 
-    <!-- 对话框 -->
-    <el-dialog v-model="dialogVisible" title="添加隧道项目" width="500" :before-close="handleClose">
-        <!-- 多个输入框信息开始 -->
-
-        <span>This is a message</span>
-
-        <!-- 多个输入框信息结束 -->
-        <template #footer>
-            <div class="dialog-footer">
-                <el-button @click="dialogVisible = false">取消</el-button>
-                <el-button type="primary" @click="addProjectInfo">
-                    确定
-                </el-button>
-            </div>
-        </template>
-    </el-dialog>
-
     <!-- projectInfo.list 就是你网络拿到的对象数据 -->
     <el-table :data="projectInfo.list" style="width: 100%;" :stripe="true"
         :header-cell-style="{ backgroundColor: '#e6f7ff', color: '#0050b3', borderColor: '#91d5ff', fontSize: '16px' }">
         <el-table-column prop="name" label="项目名称" width="180" align="center" />
         <el-table-column prop="number" label="项目编码" width="120" align="center" />
-        <el-table-column prop="money" label="项目奖金" width="120" align="center" />
+        <el-table-column prop="money" label="项目奖金(元)" width="120" align="center" />
         <el-table-column prop="address" label="项目地址" width="150" align="center" />
         <el-table-column prop="duration" label="项目工期(月)" width="120" align="center" />
 
         <!--  dataFormater 是 Element Plus 表格的一个回调函数，它的运行时机是由 Vue 的渲染机制和 Element Plus 组件库内部控制的 -->
         <el-table-column :formatter="dataFormater" prop="startTime" label="开工时间" width="150" align="center" />
-        <el-table-column :formatter="dataFormater" prop="endTime" label="终止时间" width="150" align="center" />
+        <el-table-column :formatter="dataFormater" prop="endTime" label="完结时间" width="150" align="center" />
 
         <el-table-column prop="quantity" label="隧道数量" width="120" align="center" />
 
@@ -85,6 +68,63 @@
             @current-change="pageChangeHandler" />
     </div>
 
+
+    <!-- 对话框 -->
+    <el-dialog v-model="dialogVisible" title="添加隧道项目" width="700" :before-close="handleClose" class="demo-form-dialog"
+        center>
+        <!-- 多个输入框信息开始 -->
+
+        <el-form :model="formInfo" class="demo-form-inline">
+            <el-form-item label="项目名称" class="form-item fom-item-1">
+                <el-input v-model="formInfo.name" placeholder="请输入名称" clearable class="form-item-input" />
+            </el-form-item>
+            <el-form-item label="项目编码" class="form-item fom-item-2">
+                <el-input v-model="formInfo.code" placeholder="请输入编码" clearable />
+            </el-form-item>
+            <el-form-item label="项目奖金" class="form-item fom-item-3">
+                <el-input v-model="formInfo.money" placeholder="请输入金额(元)" clearable />
+            </el-form-item>
+            <el-form-item label="项目地址" class="form-item fom-item-4">
+                <el-input v-model="formInfo.address" placeholder="请输入地址" clearable />
+            </el-form-item>
+            <el-form-item label="项目工期" class="form-item fom-item-5">
+                <el-input v-model="formInfo.duration" placeholder="请输入工期(月)" clearable />
+            </el-form-item>
+            <el-form-item label="隧道数量" class="form-item fom-item-6">
+                <el-input v-model="formInfo.tunnelNumber" placeholder="请输入数量" clearable />
+            </el-form-item>
+
+            <el-form-item label="开工时间" class="form-item fom-item-7">
+                <el-date-picker value-format="x" v-model="formInfo.startTime" type="date" placeholder="请选择开工时间"
+                    clearable />
+            </el-form-item>
+            <el-form-item label="完结时间" class="form-item fom-item-8">
+                <el-date-picker value-format="x" v-model="formInfo.endTime" type="date" placeholder="请选择完结时间"
+                    clearable />
+            </el-form-item>
+
+
+            <el-form-item label="项目状态" class="form-item fom-item-9">
+                <el-select v-model="formInfo.status" placeholder="请选择项目状态" clearable >
+                    <el-option label="施工中" value="UnderConstruction" />
+                    <el-option label="已完结" value="Finished" />
+                </el-select>
+            </el-form-item>
+        </el-form>
+
+        <!-- 多个输入框信息结束 template #footer 必须是 对话框的直接子元素 -->
+        <template #footer>
+            <div class="dialog-footer">
+                <el-button @click="dialogVisible = false">取消</el-button>
+                <el-button type="primary" @click="addProjectInfo">
+                    确定
+                </el-button>
+            </div>
+        </template>
+
+
+
+    </el-dialog>
 </template>
 
 <script setup lang="ts">
@@ -225,9 +265,26 @@ const handleClose = (done: () => void) => {
  *          添加  按钮  核心业务逻辑函数
 */
 
-function addProjectInfo(){
+const formInfo = reactive({
+    name: "",
+    code: "",
+    money: "",
+    address: "",
+    duration: "",
+    startTime: "",
+    endTime: "",
+    tunnelNumber: "",
+    status: ""
+})
+
+function addProjectInfo() {
     //  对象的形式添加了 调用API 然后传入对象 属性有很多
+    console.log(formInfo);
+
 }
+
+
+
 
 </script>
 <style scoped lang="scss">
@@ -255,5 +312,17 @@ function addProjectInfo(){
     right: 20px;
     // bottom: 100px;
     top: 820px;
+}
+
+.demo-form-dialog {
+
+    .demo-form-inline {
+        margin-top: 10px;
+        display: grid;
+        //      行 自动填充  每个元素宽度280px
+        grid-template-columns: repeat(auto-fill, 280px);
+        column-gap: 108px;
+        row-gap: 20px;
+    }
 }
 </style>
