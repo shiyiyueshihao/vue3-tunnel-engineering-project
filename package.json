@@ -15,6 +15,7 @@
   },
   "dependencies": {
     "@element-plus/icons-vue": "^2.3.2",
+    "@tinymce/tinymce-vue": "^6.3.0",
     "axios": "^1.13.2",
     "body-parser": "^2.2.1",
     "cors": "^2.8.5",
@@ -27,6 +28,7 @@
     "pinia-plugin-persistedstate": "^4.7.1",
     "querystring": "^0.2.1",
     "sass": "^1.96.0",
+    "tinymce": "^8.3.1",
     "vue": "^3.5.25",
     "vue-i18n": "^12.0.0-alpha.3",
     "vue-router": "^4.6.3"

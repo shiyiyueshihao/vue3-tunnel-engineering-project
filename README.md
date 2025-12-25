@@ -14,7 +14,8 @@
   7.2 icons  --  npm install @element-plus/icons-vue  --  独立的包 再哪里使用 哪里引入 不用全局
 8.  typescript  --  自带
 9.  sass
-
+10. 富文本编辑器  TinyMCE
+        npm install tinymce @tinymce/tinymce-vue
 
 
 ## 后台服务器模拟搭建

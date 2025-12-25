@@ -44,6 +44,7 @@ declare module 'vue' {
     SettingButton: typeof import('./src/components/SettingButton/SettingButton.vue')['default']
     SidebarNav: typeof import('./src/components/SidebarNav/SidebarNav.vue')['default']
     SliderNav: typeof import('./src/components/SidebarNav/sliderNav.vue')['default']
+    TinyMCEEditor: typeof import('./src/components/TinyMCEEditor/TinyMCEEditor.vue')['default']
     TopNav: typeof import('./src/components/TopNav/TopNav.vue')['default']
   }
 }

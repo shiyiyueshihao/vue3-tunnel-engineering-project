@@ -103,9 +103,6 @@
                     clearable />
             </el-form-item>
 
-            <el-form-item label="备注" class="form-item fom-item-9">
-                <el-input v-model="formInfo.remark" placeholder="请输入数量" clearable />
-            </el-form-item>
 
             <el-form-item label="项目状态" class="form-item fom-item-10">
                 <el-select v-model="formInfo.status" placeholder="请选择项目状态" clearable>
@@ -115,11 +112,18 @@
             </el-form-item>
         </el-form>
 
+        <el-form-item label="备注" class="form-item fom-item-9" style="margin-top: 10px;">
+            <!-- <el-input v-model="formInfo.remark" placeholder="请输入数量" clearable /> -->
+            <TinyMCEEditor @onDataEvent="getTinyMCEEditorData" :disabled="false" />
+        </el-form-item>
+
+
+
         <!-- 多个输入框信息结束 template #footer 必须是 对话框的直接子元素 -->
         <template #footer>
             <div class="dialog-footer">
                 <el-button @click="dialogVisible = false">取消</el-button>
-                <el-button type="primary" @click="addProjectInfo">
+                <el-button type="primary" @click="addProjectInfo(formInfo)">
                     确定
                 </el-button>
             </div>
@@ -228,7 +232,7 @@ function pageChangeHandler(value: number) {
 function onSearch() {
     console.log("触发搜索");
     api.getSearch({ search: searchInfo.value }).then(res => {
-        console.log(res.data.result);
+        // console.log(res.data.result);
 
         //      如果输入框  的 内容 为 空  则返回第一页数据 这样就OK了
         if (!searchInfo.value) {
@@ -256,7 +260,7 @@ const dialogVisible = ref<boolean>(false)
 import { ElMessageBox } from 'element-plus'
 const handleClose = (done: () => void) => {
     ElMessageBox.confirm(
-        '尚未保存，确定关闭？',
+        '表单未提交，确定关闭？',
         '提示', // 建议加上标题，显得更正式
         {
             confirmButtonText: '确定',
@@ -265,9 +269,7 @@ const handleClose = (done: () => void) => {
         }
     )
         .then(() => {
-            //  挂载外部的 确定按钮 事件 --  暂时还未完成其功能
-            addProjectInfo(formInfo)
-
+            pageChangeHandler(1)
             done()
         })
         .catch(() => {
@@ -279,25 +281,76 @@ const handleClose = (done: () => void) => {
  *          添加  按钮  核心业务逻辑函数
 */
 
-const formInfo = reactive({
+//  定义接口 
+interface infoType {
+    name: string | null,
+    code: string | number | null,
+    money: number | null,
+    address: string | number | null,
+    duration: number | null,
+    startTime: number | null,
+    endTime: number | null,
+    tunnelNumber: number | null,
+    status: string | null,
+    remark: string | number | null,
+}
+
+const formInfo: infoType = reactive({
     name: "",
     code: "",
-    money: "",
+    money: null,
     address: "",
-    duration: "",
-    startTime: "",
-    endTime: "",
-    tunnelNumber: "",
+    duration: null,
+    startTime: null,
+    endTime: null,
+    tunnelNumber: null,
     status: "",
     remark: "",
 })
 
-function addProjectInfo() {
-    //  对象的形式添加了 调用API 然后传入对象 属性有很多
-    console.log(formInfo);
+//  添加按钮 核心业务逻辑函数
+import { ElMessage } from 'element-plus'
+function addProjectInfo(value: infoType) {
+
+    if (value.name && value.code && value.money && value.address && value.duration && value.startTime && value.endTime && value.tunnelNumber && value.status) {
+        // console.log(value);
+        api.addFormInfo(value).then(res => {
+            console.log(res.data);
+            if (res.data.status === 200) {
+                //  1.将 这个 对话框隐藏   2.将 页面刷新(可以调用一次查询接口)
+                dialogVisible.value = false
+                pageChangeHandler(1)
+            }
+
+        }).catch(err => {
+            console.log(err);
+        })
+    } else {
+        ElMessage({
+            message: '请将表格填写完整.',
+            type: 'warning',
+        })
+    }
 
 }
 
+/**
+ *              富文本编辑器 使用
+ */
+// @ts-ignore
+import TinyMCEEditor from '@/components/TinyMCEEditor/TinyMCEEditor.vue';
+
+function getTinyMCEEditorData(data: any) {
+    console.log(data);
+
+}
+
+
+/**
+ *              2025  --  12  --  26    
+ *                      先要完成  表格校验   数字校验 
+ * 
+*/
 
 
 

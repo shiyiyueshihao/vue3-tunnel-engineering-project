@@ -71,8 +71,10 @@ const api = {
     /**
      *  项目基础信息 添加功能
     */
-    addFormInfo() {
-        return axios.get(base.baseURL + base.addFormInfo)
+    addFormInfo(params:object) {
+        return axios.get(base.baseURL + base.addFormInfo,{
+            params
+        })
     }
 
 }
