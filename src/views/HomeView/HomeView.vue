@@ -167,7 +167,7 @@ onUnmounted(() => {
 
 
 .echarts {
-    margin-top: 20px;
+    margin-top: 10px;
 
     .top {
         .echarts-line {

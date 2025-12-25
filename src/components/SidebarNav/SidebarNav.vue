@@ -83,7 +83,8 @@ if (ControlMenuStore.routerPath) {
     position: absolute;
     left: 0;
     top: 0;
-    bottom: 0;
+    height: 100vh;
+    // bottom: 0;
     background-color: #304156; //  背景颜色跟 侧边栏一致
     transition: 300ms ease-in;
 
