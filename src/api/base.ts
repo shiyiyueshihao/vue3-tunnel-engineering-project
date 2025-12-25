@@ -12,6 +12,7 @@ const base = {
     projectInfo:"/api/project/all",                        //        获取 分页 信息  --  项目基础信息    
     search:"/api/project/search",                         //        隧道模糊查询
     total:"/api/project/total",                                //        获取数据总条数
+    addFormInfo:"/api/project/add",                                //        项目基础信息 添加 功能接口
 }
 
 export default base
