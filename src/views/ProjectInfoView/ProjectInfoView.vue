@@ -613,18 +613,18 @@ const rules = reactive({
     ],
 })
 /**
- *          添加  校验  
+ *          添加  校验  类型定义
 */
 
 const addFormRef = ref<FormInstance>()
 
-
-
 /**
- *          编辑  校验  
+ *          编辑  校验  类型定义
 */
 
 const editFormRef = ref<FormInstance>()
+
+
 </script>
 <style scoped lang="scss">
 .search {
