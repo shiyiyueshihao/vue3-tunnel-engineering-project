@@ -205,13 +205,35 @@ router.get('/project/add', (req, res) => {
             })
         } else {
             res.send({
-                status:500,
-                msg:"添加失败"
+                status: 500,
+                msg: "添加失败"
             })
         }
     })
 })
 
+
+/**
+ *          隧道项目基础信息  删除 功能 
+*/
+
+router.get("/project/del", (req, res) => {
+    var id = url.parse(req.url, true).query.id;
+    var sql = "delete from project where id=?";
+    SQLConnect(sql, [id], result => {
+        if (result.affectedRows > 0) {
+            res.send({
+                status: 200,
+                msg: "删除成功"
+            })
+        } else {
+            res.send({
+                status: 500,
+                msg: "删除失败"
+            })
+        }
+    })
+})
 
 //  导出 router 让外部可以访问
 // module.exports = router
