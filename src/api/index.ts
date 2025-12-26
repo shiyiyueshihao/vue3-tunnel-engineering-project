@@ -84,6 +84,14 @@ const api = {
             params
         })
     },
+    /**
+     *  项目基础信息 编辑 功能  --  预更新
+    */
+    preFormInfo(params:object) {
+        return axios.get(base.baseURL + base.preFormInfo,{
+            params
+        })
+    },
 
 }
 

@@ -15,7 +15,7 @@
        1. 绑定 v-model 到内部变量 myValue
        2. 直接使用 setup 中定义的 init 配置
     -->
-    
+
 </template>
 <script setup>
 import tinymce from 'tinymce' //tinymce默认hidden，不引入不显示
@@ -42,13 +42,19 @@ import 'tinymce/plugins/save' // 保存
 import "tinymce/plugins/searchreplace"; //查询替换
 import "tinymce/plugins/pagebreak"; //分页
 import "tinymce/plugins/insertdatetime"; //时间插入
-import { ref,reactive,watch,onMounted } from "vue"
- 
+import { ref, reactive, watch, onMounted } from "vue"
+
+
+import api from '../../api/index.ts'
 const emit = defineEmits(["onDataEvent"])
 const props = defineProps({
     value: {
         type: String,
         default: ''
+    },
+    editorID: {
+        type: Number,
+        default: 0
     },
     plugins: {
         type: [String, Array],
@@ -61,7 +67,7 @@ const props = defineProps({
     }
 })
 const textContent = ref("")
- 
+
 //  初始化
 const init = reactive({
     width: 720,
@@ -91,23 +97,32 @@ const init = reactive({
         success(img)
     }
 })
- 
+
 // watch(props.value,(newValue,oldValue) =>{
 //     textContent.value = newValue
 // })
 
 //  优化   watch 监听函数 
-watch(() => props.modelValue, (newValue) => { 
+watch(() => props.modelValue, (newValue) => {
     textContent.value = newValue
- })
- 
-onMounted(()=>{
+})
+
+onMounted(() => {
     // 初始化 tinymce
     tinymce.init({})
+
+    //  拿到唯一 ID 再次网络请求 -- 预更新 即可拿到 remark 然后赋值
+    api.preFormInfo({ id: props.editorID }).then(res => {
+        if (res.data.status === 200) {
+            textContent.value = res.data.result.remark
+        }
+    }).catch(err => {
+        console.log(err)
+    })
 })
- 
-watch(textContent,(newValue,oldValue) =>{
-    emit("onDataEvent",newValue)
+
+watch(textContent, (newValue, oldValue) => {
+    emit("onDataEvent", newValue)
 })
- 
+
 </script>

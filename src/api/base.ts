@@ -14,6 +14,7 @@ const base = {
     total:"/api/project/total",                                //        获取数据总条数
     addFormInfo:"/api/project/add",                                //        项目基础信息 添加 功能api
     delFormInfo:"/api/project/del",                                //        项目基础信息 删除 功能api
+    preFormInfo:"/api/project/update/pre",                                //        项目基础信息 添加 功能api   --  预更新
 }
 
 export default base

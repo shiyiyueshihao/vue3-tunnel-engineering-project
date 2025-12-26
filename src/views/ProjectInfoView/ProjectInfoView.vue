@@ -9,7 +9,7 @@
             </el-form-item>
             <el-form-item class="search-button">
                 <el-button type="primary" plain @click="onSearch">搜索</el-button>
-                <el-button type="primary" plain @click="dialogVisible = true">添加</el-button>
+                <el-button type="primary" plain @click="dialogAddVisible = true">添加</el-button>
             </el-form-item>
         </el-form>
     </div>
@@ -18,7 +18,7 @@
     <el-table :data="projectInfo.list" style="width: 100%;" :stripe="true"
         :header-cell-style="{ backgroundColor: '#e6f7ff', color: '#0050b3', borderColor: '#91d5ff', fontSize: '16px' }">
         <el-table-column prop="name" label="项目名称" width="180" align="center" />
-        <el-table-column prop="number" label="项目编码" width="120" align="center" />
+        <el-table-column prop="code" label="项目编码" width="120" align="center" />
         <el-table-column prop="money" label="项目奖金(元)" width="120" align="center" />
         <el-table-column prop="address" label="项目地址" width="150" align="center" />
         <el-table-column prop="duration" label="项目工期(月)" width="120" align="center" />
@@ -27,7 +27,7 @@
         <el-table-column :formatter="dataFormater" prop="startTime" label="开工时间" width="150" align="center" />
         <el-table-column :formatter="dataFormater" prop="endTime" label="完结时间" width="150" align="center" />
 
-        <el-table-column prop="quantity" label="隧道数量" width="120" align="center" />
+        <el-table-column prop="tunnelNumber" label="隧道数量" width="120" align="center" />
 
         <!-- template #default="scope" 模板写法 1. 标签 (Tag) 2.气泡提示 (Tooltip) -->
         <el-table-column prop="status" label="项目状态" width="120" align="center">
@@ -74,46 +74,47 @@
     </div>
 
 
-    <!-- 对话框 -->
-    <el-dialog v-model="dialogVisible" title="添加隧道项目" width="700" :before-close="handleClose" class="demo-form-dialog"
-        center>
+    <!-- 添加按钮 弹出对话框 -->
+    <el-dialog v-model="dialogAddVisible" title="添加隧道项目信息" width="700" :before-close="handleClose"
+        class="add-form-dialog" center>
         <!-- 多个输入框信息开始 -->
 
-        <el-form :model="formInfo" class="demo-form-inline">
+        <el-form :model="AddFormInfo" class="demo-form-inline">
             <el-form-item label="项目名称" class="form-item fom-item-1">
-                <el-input v-model="formInfo.name" placeholder="请输入名称" clearable class="form-item-input" />
+                <el-input v-model="AddFormInfo.name" placeholder="请输入名称" clearable class="form-item-input" />
             </el-form-item>
             <el-form-item label="项目编码" class="form-item fom-item-2">
-                <el-input v-model="formInfo.code" placeholder="请输入编码" clearable />
+                <el-input v-model="AddFormInfo.code" placeholder="请输入编码" clearable />
             </el-form-item>
             <el-form-item label="项目奖金" class="form-item fom-item-3">
-                <el-input v-model="formInfo.money" placeholder="请输入金额(元)" clearable />
+                <el-input v-model="AddFormInfo.money" placeholder="请输入金额(元)" clearable />
             </el-form-item>
             <el-form-item label="项目地址" class="form-item fom-item-4">
-                <el-input v-model="formInfo.address" placeholder="请输入地址" clearable />
+                <el-input v-model="AddFormInfo.address" placeholder="请输入地址" clearable />
             </el-form-item>
             <el-form-item label="项目工期" class="form-item fom-item-5">
-                <el-input v-model="formInfo.duration" placeholder="请输入工期(月)" clearable />
+                <el-input v-model="AddFormInfo.duration" placeholder="请输入工期(月)" clearable />
             </el-form-item>
             <el-form-item label="隧道数量" class="form-item fom-item-6">
-                <el-input v-model="formInfo.tunnelNumber" placeholder="请输入数量" clearable />
+                <el-input v-model="AddFormInfo.tunnelNumber" placeholder="请输入数量" clearable />
             </el-form-item>
 
             <el-form-item label="开工时间" class="form-item fom-item-7">
-                <el-date-picker value-format="x" v-model="formInfo.startTime" type="date" placeholder="请选择开工时间"
+                <el-date-picker value-format="x" v-model="AddFormInfo.startTime" type="date" placeholder="请选择开工时间"
                     clearable />
             </el-form-item>
             <el-form-item label="完结时间" class="form-item fom-item-8">
-                <el-date-picker value-format="x" v-model="formInfo.endTime" type="date" placeholder="请选择完结时间"
+                <el-date-picker value-format="x" v-model="AddFormInfo.endTime" type="date" placeholder="请选择完结时间"
                     clearable />
             </el-form-item>
 
 
             <el-form-item label="项目状态" class="form-item fom-item-10">
-                <el-select v-model="formInfo.status" placeholder="请选择项目状态" clearable>
+                <!-- <el-select v-model="AddFormInfo.status" placeholder="请选择项目状态" clearable>
                     <el-option label="施工中" value="UnderConstruction" />
                     <el-option label="已完结" value="Finished" />
-                </el-select>
+                </el-select> -->
+                <el-input v-model="AddFormInfo.status" placeholder="1：已完结 0：施工中" clearable />
             </el-form-item>
         </el-form>
 
@@ -123,20 +124,83 @@
         </el-form-item>
 
 
-
         <!-- 多个输入框信息结束 template #footer 必须是 对话框的直接子元素 -->
         <template #footer>
             <div class="dialog-footer">
-                <el-button @click="dialogVisible = false">取消</el-button>
-                <el-button type="primary" @click="addProjectInfo(formInfo)">
+                <el-button @click="dialogAddVisible = false">取消</el-button>
+                <el-button type="primary" @click="addProjectInfo(AddFormInfo)">
                     确定
                 </el-button>
             </div>
         </template>
 
-
-
     </el-dialog>
+
+
+
+    <!-- 编辑按钮 弹出对话框   destroy-on-close 关闭时 销毁对话框 让他再次渲染触发编辑和富文本框 -->
+    <el-dialog destroy-on-close v-model="dialogEditorVisible" title="编辑隧道项目信息" width="700" :before-close="handleClose"
+        class="editor-form-dialog" center>
+
+        <!-- 多个输入框信息开始 -->
+        <el-form :model="EditorFormInfo" class="demo-form-inline">
+            <el-form-item label="项目名称" class="form-item fom-item-1">
+                <el-input v-model="EditorFormInfo.name" placeholder="请输入名称" clearable class="form-item-input" />
+            </el-form-item>
+            <el-form-item label="项目编码" class="form-item fom-item-2">
+                <el-input v-model="EditorFormInfo.code" placeholder="请输入编码" clearable />
+            </el-form-item>
+            <el-form-item label="项目奖金" class="form-item fom-item-3">
+                <el-input v-model="EditorFormInfo.money" placeholder="请输入金额(元)" clearable />
+            </el-form-item>
+            <el-form-item label="项目地址" class="form-item fom-item-4">
+                <el-input v-model="EditorFormInfo.address" placeholder="请输入地址" clearable />
+            </el-form-item>
+            <el-form-item label="项目工期" class="form-item fom-item-5">
+                <el-input v-model="EditorFormInfo.duration" placeholder="请输入工期(月)" clearable />
+            </el-form-item>
+            <el-form-item label="隧道数量" class="form-item fom-item-6">
+                <el-input v-model="EditorFormInfo.tunnelNumber" placeholder="请输入数量" clearable />
+            </el-form-item>
+
+            <el-form-item label="开工时间" class="form-item fom-item-7">
+                <el-date-picker value-format="x" v-model="EditorFormInfo.startTime" type="date" placeholder="请选择开工时间"
+                    clearable />
+            </el-form-item>
+            <el-form-item label="完结时间" class="form-item fom-item-8">
+                <el-date-picker value-format="x" v-model="EditorFormInfo.endTime" type="date" placeholder="请选择完结时间"
+                    clearable />
+            </el-form-item>
+
+
+            <el-form-item label="项目状态" class="form-item fom-item-10">
+                <!-- <el-select v-model="EditorFormInfo.status" placeholder="请选择项目状态" clearable>
+                    <el-option label="施工中" value="UnderConstruction" />
+                    <el-option label="已完结" value="Finished" />
+                </el-select> -->
+                <el-input v-model="EditorFormInfo.status" placeholder="1：已完结 0：施工中" clearable />
+            </el-form-item>
+        </el-form>
+
+        <el-form-item label="备注" class="form-item fom-item-9" style="margin-top: 10px;">
+            <!-- <el-input v-model="formInfo.remark" placeholder="请输入数量" clearable /> -->
+            <!-- 唯一 ID处理  -->
+            <TinyMCEEditor :editorID="editorID" @onDataEvent="getTinyMCEEditorData" :disabled="false" />
+        </el-form-item>
+
+
+
+        <!-- 多个输入框信息结束 template #footer 必须是 对话框的直接子元素 -->
+        <template #footer>
+            <div class="dialog-footer">
+                <el-button @click="dialogEditorVisible = false">取消</el-button>
+                <el-button type="primary" @click="EditorProjectInfo(EditorFormInfo)">
+                    确定
+                </el-button>
+            </div>
+        </template>
+    </el-dialog>
+
 </template>
 
 <script setup lang="ts">
@@ -202,11 +266,38 @@ function getPagesDate(page: number) {
 
 
 /**
- *      编辑函数
+ *      编辑函数  --  特殊  --  数据回显
  */
 
-function handleEdit(index: number, row: object) {
+const dialogEditorVisible = ref<boolean>(false)
+const editorID = ref<number>(0)
+function handleEdit(index: number, row: rowType) {
+    //      数据回显 拿到最新的数据  用 网络请求
     console.log(index, row);
+    dialogEditorVisible.value = true
+    //  在网络请求之前请求ID 然后先赋值给 富文本 再请求网络赋值给其他
+    editorID.value = row.id
+    api.preFormInfo({ id: row.id }).then(res => {
+        //  拿到网络请求的数据 将这些值赋值给 EditorFormInfo
+        if (res.data.status === 200) {
+            console.log(res.data.result);
+            EditorFormInfo.name = res.data.result.name;
+            EditorFormInfo.code = res.data.result.code;
+            EditorFormInfo.money = res.data.result.money;
+            EditorFormInfo.address = res.data.result.address;
+            EditorFormInfo.duration = res.data.result.duration;
+            EditorFormInfo.startTime = res.data.result.startTime;
+            EditorFormInfo.endTime = res.data.result.endTime;
+            EditorFormInfo.tunnelNumber = res.data.result.tunnelNumber;
+            EditorFormInfo.status = res.data.result.status;
+            // EditorFormInfo.remark = res.data.result.remark;
+            //  唯一ID处理  对应 数据库的唯一 ID
+            // editorID.value = res.data.result.id
+
+        }
+    }).catch(err => {
+        console.log(err);
+    })
 
 }
 
@@ -226,7 +317,7 @@ interface rowType {
     endTime: number | null,
     tunnelNumber: number | null,
     status: string | null,
-    remark: any,
+    remark: string,
 }
 
 function handleDelete(index: number, row: rowType) {
@@ -302,7 +393,7 @@ function onSearch() {
 }
 
 //  对话框 默认不显示  --  点击添加 将此改为true
-const dialogVisible = ref<boolean>(false)
+const dialogAddVisible = ref<boolean>(false)
 
 /**
  *      关闭对话框(不是取消也不是确定)  的处理函数
@@ -342,10 +433,11 @@ interface infoType {
     endTime: number | null,
     tunnelNumber: number | null,
     status: string | null,
-    remark: any,
+    remark: string,
 }
 
-const formInfo: infoType = reactive({
+//  添加 表格 初始化
+const AddFormInfo: infoType = reactive({
     name: "",
     code: "",
     money: null,
@@ -363,12 +455,13 @@ import { ElMessage } from 'element-plus'
 function addProjectInfo(value: infoType) {
 
     if (value.name && value.code && value.money && value.address && value.duration && value.startTime && value.endTime && value.tunnelNumber && value.status) {
+
         // console.log(value);
         api.addFormInfo(value).then(res => {
             console.log(res.data);
             if (res.data.status === 200) {
                 //  1.将 这个 对话框隐藏   2.将 页面刷新(可以调用一次查询接口)
-                dialogVisible.value = false
+                dialogAddVisible.value = false
                 pageChangeHandler(1)
             }
 
@@ -390,10 +483,40 @@ function addProjectInfo(value: infoType) {
 // @ts-ignore
 import TinyMCEEditor from '@/components/TinyMCEEditor/TinyMCEEditor.vue';
 
+/**
+ *              获取富文本编辑
+ */
+
 function getTinyMCEEditorData(data: any) {
     console.log(data);
-    formInfo.remark = data
+    //  表明 是 在进行添加 
+    if (dialogAddVisible.value === true) {
+        AddFormInfo.remark = data
+    }
+
 }
+
+/**
+ *              编辑按钮  --  特殊  --  数据回显
+ */
+
+const EditorFormInfo: infoType = reactive({
+    name: "",
+    code: "",
+    money: null,
+    address: "",
+    duration: null,
+    startTime: null,
+    endTime: null,
+    tunnelNumber: null,
+    status: "",
+    remark: "",
+})
+
+function EditorProjectInfo(value: infoType) {
+
+}
+
 
 
 /**
@@ -401,7 +524,6 @@ function getTinyMCEEditorData(data: any) {
  *                      先要完成  表格校验   数字校验 
  * 
 */
-
 
 
 </script>
@@ -429,10 +551,10 @@ function getTinyMCEEditorData(data: any) {
     position: absolute;
     right: 20px;
     // bottom: 100px;
-    top: 820px;
+    top: 865px;
 }
 
-.demo-form-dialog {
+.add-form-dialog {
 
     .demo-form-inline {
         margin-top: 10px;
@@ -442,5 +564,9 @@ function getTinyMCEEditorData(data: any) {
         column-gap: 108px;
         row-gap: 20px;
     }
+}
+
+.editor-form-dialog {
+    @extend .add-form-dialog
 }
 </style>

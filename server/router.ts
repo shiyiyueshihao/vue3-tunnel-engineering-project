@@ -235,6 +235,29 @@ router.get("/project/del", (req, res) => {
     })
 })
 
+
+/**
+ *          隧道项目基础信息  编辑 功能    --   预更新
+*/
+
+router.get("/project/update/pre", (req, res) => {
+    var id = url.parse(req.url, true).query.id;
+    var sql = "select *  from project where id=?";
+    SQLConnect(sql, [id], result => {
+        if (result.length > 0) {
+            res.send({
+                status: 200,
+                result: result[0]
+            })
+        } else {
+            res.send({
+                status: 500,
+                msg: "预更新失败"
+            })
+        }
+    })
+})
+
 //  导出 router 让外部可以访问
 // module.exports = router
 export default router //      --   ts写法
