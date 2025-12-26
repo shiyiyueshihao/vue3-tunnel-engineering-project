@@ -75,7 +75,15 @@ const api = {
         return axios.get(base.baseURL + base.addFormInfo,{
             params
         })
-    }
+    },
+    /**
+     *  项目基础信息 删除 功能
+    */
+    delFormInfo(params:object) {
+        return axios.get(base.baseURL + base.delFormInfo,{
+            params
+        })
+    },
 
 }
 

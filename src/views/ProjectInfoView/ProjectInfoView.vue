@@ -214,10 +214,55 @@ function handleEdit(index: number, row: object) {
 /**
  *      删除函数
  */
+//  定义 一下  row  的类型
+interface rowType {
+    id: number,
+    name: string | null,
+    code: string | number | null,
+    money: number | null,
+    address: string | number | null,
+    duration: number | null,
+    startTime: number | null,
+    endTime: number | null,
+    tunnelNumber: number | null,
+    status: string | null,
+    remark: any,
+}
 
-function handleDelete(index: number, row: object) {
-    console.log(index, row);
+function handleDelete(index: number, row: rowType) {
+    // console.log(index, row);
+    // console.log(row.id);
 
+    ElMessageBox.confirm(
+        '删除该数据后无法恢复，确认删除？',
+        '警告',
+        {
+            confirmButtonText: '确定',
+            cancelButtonText: '取消',
+            type: 'warning',
+        }
+    )
+        .then(() => {
+            //  这里调用 api  删除 
+            api.delFormInfo({ id: row.id }).then(res => {
+                console.log(res.data);
+                // 删除陈工之后 给个提示框 和 刷新
+                pageChangeHandler(1)
+                ElMessage({
+                    type: 'success',
+                    message: '删除成功',
+                })
+            }).catch(err => {
+                console.log(err);
+            })
+        })
+        .catch(() => {
+            //  取消删除什么都不做
+            ElMessage({
+                type: 'info',
+                message: '您已取消删除',
+            })
+        })
 }
 
 
@@ -286,7 +331,7 @@ const handleClose = (done: () => void) => {
  *          添加  按钮  核心业务逻辑函数
 */
 
-//  定义接口 
+//  定义表格接口 
 interface infoType {
     name: string | null,
     code: string | number | null,
