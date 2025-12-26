@@ -74,42 +74,42 @@
     </div>
 
 
-    <!-- 添加按钮 弹出对话框 -->
+    <!-- 添加按钮 弹出对话框 rlues 定义规则 -->
     <el-dialog v-model="dialogAddVisible" title="添加隧道项目信息" width="700" :before-close="handleClose"
         class="add-form-dialog" center>
         <!-- 多个输入框信息开始 -->
 
-        <el-form :model="AddFormInfo" class="demo-form-inline">
-            <el-form-item label="项目名称" class="form-item fom-item-1">
-                <el-input v-model="AddFormInfo.name" placeholder="请输入名称" clearable class="form-item-input" />
+        <el-form ref="addFormRef" :model="AddFormInfo" class="demo-form-inline" :rules="rules">
+            <el-form-item prop="name" label="项目名称" class="form-item fom-item-1">
+                <el-input v-model="AddFormInfo.name" placeholder="请输入名称" clearable />
             </el-form-item>
-            <el-form-item label="项目编码" class="form-item fom-item-2">
+            <el-form-item prop="code" label="项目编码" class="form-item fom-item-2">
                 <el-input v-model="AddFormInfo.code" placeholder="请输入编码" clearable />
             </el-form-item>
-            <el-form-item label="项目奖金" class="form-item fom-item-3">
+            <el-form-item prop="money" label="项目奖金" class="form-item fom-item-3">
                 <el-input v-model="AddFormInfo.money" placeholder="请输入金额(元)" clearable />
             </el-form-item>
-            <el-form-item label="项目地址" class="form-item fom-item-4">
+            <el-form-item prop="address" label="项目地址" class="form-item fom-item-4">
                 <el-input v-model="AddFormInfo.address" placeholder="请输入地址" clearable />
             </el-form-item>
-            <el-form-item label="项目工期" class="form-item fom-item-5">
+            <el-form-item prop="duration" label="项目工期" class="form-item fom-item-5">
                 <el-input v-model="AddFormInfo.duration" placeholder="请输入工期(月)" clearable />
             </el-form-item>
-            <el-form-item label="隧道数量" class="form-item fom-item-6">
+            <el-form-item prop="tunnelNumber" label="隧道数量" class="form-item fom-item-6">
                 <el-input v-model="AddFormInfo.tunnelNumber" placeholder="请输入数量" clearable />
             </el-form-item>
 
-            <el-form-item label="开工时间" class="form-item fom-item-7">
+            <el-form-item prop="startTime" label="开工时间" class="form-item fom-item-7">
                 <el-date-picker value-format="x" v-model="AddFormInfo.startTime" type="date" placeholder="请选择开工时间"
                     clearable />
             </el-form-item>
-            <el-form-item label="完结时间" class="form-item fom-item-8">
+            <el-form-item prop="endTime" label="完结时间" class="form-item fom-item-8">
                 <el-date-picker value-format="x" v-model="AddFormInfo.endTime" type="date" placeholder="请选择完结时间"
                     clearable />
             </el-form-item>
 
 
-            <el-form-item label="项目状态" class="form-item fom-item-10">
+            <el-form-item prop="status" label="项目状态" class="form-item fom-item-10">
                 <!-- <el-select v-model="AddFormInfo.status" placeholder="请选择项目状态" clearable>
                     <el-option label="施工中" value="UnderConstruction" />
                     <el-option label="已完结" value="Finished" />
@@ -118,9 +118,9 @@
             </el-form-item>
         </el-form>
 
-        <el-form-item label="备注" class="form-item fom-item-9" style="margin-top: 10px;">
+        <el-form-item label="备注" class="form-item fom-item-9" style="margin-top: 25px;">
             <!-- <el-input v-model="formInfo.remark" placeholder="请输入数量" clearable /> -->
-            <TinyMCEEditor @onDataEvent="getTinyMCEEditorData" :disabled="false" />
+            <TinyMCEEditor @onDataEvent="getTinyMCEEditorData" :disabled="false" class="tinymceEditor" />
         </el-form-item>
 
 
@@ -128,7 +128,7 @@
         <template #footer>
             <div class="dialog-footer">
                 <el-button @click="dialogAddVisible = false">取消</el-button>
-                <el-button type="primary" @click="addProjectInfo(AddFormInfo)">
+                <el-button type="primary" @click="addProjectInfo(AddFormInfo, addFormRef)">
                     确定
                 </el-button>
             </div>
@@ -143,37 +143,37 @@
         class="editor-form-dialog" center>
 
         <!-- 多个输入框信息开始 -->
-        <el-form :model="EditorFormInfo" class="demo-form-inline">
-            <el-form-item label="项目名称" class="form-item fom-item-1">
-                <el-input v-model="EditorFormInfo.name" placeholder="请输入名称" clearable class="form-item-input" />
+        <el-form :model="EditorFormInfo" class="demo-form-inline" :rules="rules">
+            <el-form-item prop="name" label="项目名称" class="form-item fom-item-1">
+                <el-input v-model="EditorFormInfo.name" placeholder="请输入名称" clearable />
             </el-form-item>
-            <el-form-item label="项目编码" class="form-item fom-item-2">
+            <el-form-item prop="code" label="项目编码" class="form-item fom-item-2">
                 <el-input v-model="EditorFormInfo.code" placeholder="请输入编码" clearable />
             </el-form-item>
-            <el-form-item label="项目奖金" class="form-item fom-item-3">
+            <el-form-item prop="money" label="项目奖金" class="form-item fom-item-3">
                 <el-input v-model="EditorFormInfo.money" placeholder="请输入金额(元)" clearable />
             </el-form-item>
-            <el-form-item label="项目地址" class="form-item fom-item-4">
+            <el-form-item prop="address" label="项目地址" class="form-item fom-item-4">
                 <el-input v-model="EditorFormInfo.address" placeholder="请输入地址" clearable />
             </el-form-item>
-            <el-form-item label="项目工期" class="form-item fom-item-5">
+            <el-form-item prop="duration" label="项目工期" class="form-item fom-item-5">
                 <el-input v-model="EditorFormInfo.duration" placeholder="请输入工期(月)" clearable />
             </el-form-item>
-            <el-form-item label="隧道数量" class="form-item fom-item-6">
+            <el-form-item prop="tunnelNumber" label="隧道数量" class="form-item fom-item-6">
                 <el-input v-model="EditorFormInfo.tunnelNumber" placeholder="请输入数量" clearable />
             </el-form-item>
 
-            <el-form-item label="开工时间" class="form-item fom-item-7">
+            <el-form-item prop="startTime" label="开工时间" class="form-item fom-item-7">
                 <el-date-picker value-format="x" v-model="EditorFormInfo.startTime" type="date" placeholder="请选择开工时间"
                     clearable />
             </el-form-item>
-            <el-form-item label="完结时间" class="form-item fom-item-8">
+            <el-form-item prop="endTime" label="完结时间" class="form-item fom-item-8">
                 <el-date-picker value-format="x" v-model="EditorFormInfo.endTime" type="date" placeholder="请选择完结时间"
                     clearable />
             </el-form-item>
 
 
-            <el-form-item label="项目状态" class="form-item fom-item-10">
+            <el-form-item prop="status" label="项目状态" class="form-item fom-item-10">
                 <!-- <el-select v-model="EditorFormInfo.status" placeholder="请选择项目状态" clearable>
                     <el-option label="施工中" value="UnderConstruction" />
                     <el-option label="已完结" value="Finished" />
@@ -182,10 +182,11 @@
             </el-form-item>
         </el-form>
 
-        <el-form-item label="备注" class="form-item fom-item-9" style="margin-top: 10px;">
+        <el-form-item label="备注" class="form-item fom-item-9" style="margin-top: 25px;">
             <!-- <el-input v-model="formInfo.remark" placeholder="请输入数量" clearable /> -->
             <!-- 唯一 ID处理  -->
-            <TinyMCEEditor :editorID="editorID" @onDataEvent="getTinyMCEEditorData" :disabled="false" />
+            <TinyMCEEditor :editorID="editorID" @onDataEvent="getTinyMCEEditorData" :disabled="false"
+                class="tinymceEditor" />
         </el-form-item>
 
 
@@ -452,28 +453,62 @@ const AddFormInfo: infoType = reactive({
 
 //  添加按钮 核心业务逻辑函数
 import { ElMessage } from 'element-plus'
-function addProjectInfo(value: infoType) {
+function addProjectInfo(value: infoType, typeInfo: FormInstance | undefined) {
+    /**
+     *      数据校验  --  通过 表单 的ref 绑定 addFormRef  与 按钮  事件传输 addFormRef  和  FormInstance  el组件身份证明  和 typeInfo.validate 的 集体校验
+     *              1.  表单写入 :rules="rules"  和  定义  rules  的  校验方式   const rules = reactive({....})
+     *              2.  表格项   的 prop="" 的 值 必须 对应 rules 里 的  键 
+     *              3.  表单绑定  ref="addFormInfo"
+     *              4.  定义  表单的  ref 为  FormInstance 
+     *              5.  引入  FormInstance       import type { FormInstance } from 'element-plus';
+     *              6.  验证
+     *                      6.1     typeInfo.validate  集体校验
+     *                      6.2     集体校验触发 rules  校验
+     *              7.  增加 时间校验
+     *                      7.1     开始时间  不能 大于 结束时间
+    */
 
-    if (value.name && value.code && value.money && value.address && value.duration && value.startTime && value.endTime && value.tunnelNumber && value.status) {
+    if (!typeInfo) return;
 
-        // console.log(value);
-        api.addFormInfo(value).then(res => {
-            console.log(res.data);
-            if (res.data.status === 200) {
-                //  1.将 这个 对话框隐藏   2.将 页面刷新(可以调用一次查询接口)
-                dialogAddVisible.value = false
-                pageChangeHandler(1)
+    typeInfo.validate((valid) => {
+        if (valid) {
+
+            // console.log(value);
+            //   时间 校验  逻辑
+            if (value.startTime && value.endTime && value.startTime > value.endTime) {
+                ElMessage({
+                    message: '开始时间不能晚于完工时间 ！',
+                    type: 'warning',
+                })
+            } else {
+
+                api.addFormInfo(value).then(res => {
+                    console.log(res.data);
+                    if (res.data.status === 200) {
+                        //  1.将 这个 对话框隐藏   2.将 页面刷新(可以调用一次查询接口)
+                        dialogAddVisible.value = false
+                        pageChangeHandler(1)
+
+                        ElMessage({
+                            message: '数据添加成功 !',
+                            type: 'success',
+                        })
+                    }
+
+                }).catch(err => {
+                    console.log(err);
+                })
             }
 
-        }).catch(err => {
-            console.log(err);
-        })
-    } else {
-        ElMessage({
-            message: '请将表格填写完整.',
-            type: 'warning',
-        })
-    }
+        } else {
+            ElMessage({
+                message: '填写信息有误请审查!.',
+                type: 'warning',
+            })
+        }
+
+    });
+
 
 }
 
@@ -520,12 +555,76 @@ function EditorProjectInfo(value: infoType) {
 
 
 /**
- *              2025  --  12  --  26    
- *                      先要完成  表格校验   数字校验 
+ *        表格校验   数字校验 
  * 
 */
+//  引入 类型 做校验
+import type { FormInstance } from 'element-plus';
+//  定义 校验 规则
+const rules = reactive({
+    // 1. 项目名称：必填，文本校验
+    name: [
+        { required: true, message: '项目名称不能为空', trigger: 'blur' },
+        { min: 2, max: 50, message: '名称长度需在 2 到 50 个字符之间', trigger: 'blur' }
+    ],
+
+    // 2. 项目编码：必填，通常为大写字母和数字组合
+    code: [
+        { required: true, message: '项目编码不能为空', trigger: 'blur' },
+        { pattern: /^[A-Z0-9-]+$/, message: '编码只能包含大写字母、数字或横杠', trigger: 'blur' }
+    ],
+
+    // 3. 钱 (元)：必须是数字，且不能为负数
+    money: [
+        { required: true, message: '请输入金额', trigger: 'blur' },
+        { pattern: /^[0-9]+(\.[0-9]{1,2})?$/, message: '请输入正确的金额格式（数字，最多两位小数）', trigger: 'change' }
+    ],
+
+    // 4. 项目地址：必填文本
+    address: [
+        { required: true, message: '项目地址不能为空', trigger: 'blur' }
+    ],
+
+    // 5. 项目工期 (月)：必须是正整数
+    duration: [
+        { required: true, message: '请输入工期', trigger: 'blur' },
+        { pattern: /^[1-9][0-9]*$/, message: '工期必须是大于 0 的整数', trigger: 'blur' }
+    ],
+
+    // 6. 隧道数量：必须是数字
+    tunnelNumber: [
+        { required: true, message: '请输入隧道数量', trigger: 'blur' },
+        { pattern: /^[0-9]+$/, message: '数量必须为纯数字', trigger: 'blur' }
+    ],
+
+    // 7. 状态：只能是 1 或 0
+    status: [
+        { required: true, message: '请选择状态', trigger: 'blur' },
+        // 这里的正则表达式限制只能输入 0 或 1
+        { pattern: /^[01]$/, message: '状态值非法，只能输入 0 或 1', trigger: 'blur' }
+    ],
+
+    // 8&9. 时间 必填
+    startTime: [
+        { required: true, message: '请选择开始日期', trigger: 'change' },
+    ],
+    endTime: [
+        { required: true, message: '请选择完结日期', trigger: 'change' },
+    ],
+})
+/**
+ *          添加  校验  
+*/
+
+const addFormRef = ref<FormInstance>()
 
 
+
+/**
+ *          编辑  校验  
+*/
+
+const editFormRef = ref<FormInstance>()
 </script>
 <style scoped lang="scss">
 .search {
@@ -562,7 +661,8 @@ function EditorProjectInfo(value: infoType) {
         //      行 自动填充  每个元素宽度280px
         grid-template-columns: repeat(auto-fill, 280px);
         column-gap: 108px;
-        row-gap: 20px;
+        row-gap: 25px;
+
     }
 }
 

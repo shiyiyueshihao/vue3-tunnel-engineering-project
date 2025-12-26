@@ -70,7 +70,7 @@ const textContent = ref("")
 
 //  初始化
 const init = reactive({
-    width: 720,
+    width: 650,
     height: 300,
     language_url: '/tinymce/langs/zh-Hans.js',
     language: 'zh-Hans',
