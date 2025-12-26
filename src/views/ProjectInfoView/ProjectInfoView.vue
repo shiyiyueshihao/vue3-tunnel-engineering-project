@@ -47,7 +47,12 @@
             </template>
         </el-table-column>
 
-        <el-table-column show-overflow-tooltip prop="remark" label="备注" align="center" />
+        <el-table-column show-overflow-tooltip label="备注" align="center">
+            <!-- 模板 渲染 允许 你拿到 当前 的 数据 cope.row(行) -->
+            <template #default="scope">
+                <div v-html="scope.row.remark"></div>
+            </template>
+        </el-table-column>
 
         <!-- 操作系统 -->
         <el-table-column label="操作" width="150" align="center">
@@ -292,7 +297,7 @@ interface infoType {
     endTime: number | null,
     tunnelNumber: number | null,
     status: string | null,
-    remark: string | number | null,
+    remark: any,
 }
 
 const formInfo: infoType = reactive({
@@ -342,7 +347,7 @@ import TinyMCEEditor from '@/components/TinyMCEEditor/TinyMCEEditor.vue';
 
 function getTinyMCEEditorData(data: any) {
     console.log(data);
-
+    formInfo.remark = data
 }
 
 

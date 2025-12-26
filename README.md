@@ -15,7 +15,7 @@
 8.  typescript  --  自带
 9.  sass
 10. 富文本编辑器  TinyMCE
-        npm install tinymce @tinymce/tinymce-vue
+        npm install tinymce@6.2.0 @tinymce/tinymce-vue@5.0.0
 
 
 ## 后台服务器模拟搭建
