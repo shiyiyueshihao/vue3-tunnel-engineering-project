@@ -55,7 +55,7 @@ instance.interceptors.request.use(
     config => {
         //  config:请求信息  ==>   请求头啊，公共地址啊等
         //  所有的post请求都需要增加一个参数的格式化    ==>  querystring.stringify(  ) 
-        if (config.method === "post") {
+        if (config.method === "post" || config.method === "put") {
             config.data = qs.stringify(config.data)
         }
 
