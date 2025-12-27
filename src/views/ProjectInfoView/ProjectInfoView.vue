@@ -528,6 +528,10 @@ function getTinyMCEEditorData(data: any) {
     if (dialogAddVisible.value === true) {
         AddFormInfo.remark = data
     }
+    //  表明 是 在进行编辑
+    if (dialogEditorVisible.value === true) {
+        EditorFormInfo.remark = data
+    }
 
 }
 
@@ -547,9 +551,39 @@ const EditorFormInfo: infoType = reactive({
     status: "",
     remark: "",
 })
-
+//  编辑确定按钮 
 function EditorProjectInfo(value: infoType) {
-
+    //  两个参数  1.  唯一id  --  我们编辑的时候能拿到 唯一 id    2. 文档数据( 编辑 的内容 )
+    api.updateFormInfo(editorID.value, {
+        //  传的数据 来源于 编辑的视图数据
+        name: EditorFormInfo.name,
+        code: EditorFormInfo.code,
+        money: EditorFormInfo.money,
+        address: EditorFormInfo.address,
+        duration: EditorFormInfo.duration,
+        startTime: EditorFormInfo.startTime,
+        endTime: EditorFormInfo.endTime,
+        tunnelNumber: EditorFormInfo.tunnelNumber,
+        status: EditorFormInfo.status,
+        remark: EditorFormInfo.remark,                  ///     富文本编辑器中的 数据 
+    }).then(res => {
+        if (res.data.status === 200) {
+            ElMessage({
+                message: '数据修改成功 !',
+                type: 'success',
+            })
+            //  关闭 编辑框
+            dialogEditorVisible.value = false
+            //  搜索第一页
+            getPagesDate(1)
+        }
+    }).catch(err => {
+        console.log(err);
+        ElMessage({
+            message: '数据修改失败 !',
+            type: 'warning',
+        })
+    })
 }
 
 
@@ -560,6 +594,7 @@ function EditorProjectInfo(value: infoType) {
 */
 //  引入 类型 做校验
 import type { FormInstance } from 'element-plus';
+import { fa } from 'element-plus/es/locale/index.mjs';
 //  定义 校验 规则
 const rules = reactive({
     // 1. 项目名称：必填，文本校验

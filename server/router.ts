@@ -141,8 +141,8 @@ router.get("/project/all", (req, res) => {
 router.get("/project/search", (req, res) => {
     //  接收参数：查询内容
     const search = url.parse(req.url, true).query.search;
-    //  模糊查询sql语句编写  name number address remark
-    const sql = "select * from project where concat(`name`,`number`,`address`,`remark`) like '%" + search + "%' ";
+    //  模糊查询sql语句编写  name code address remark  (数据库表头 number 修改为 code)
+    const sql = "select * from project where concat(`name`,`code`,`address`,`remark`) like '%" + search + "%' ";
     SQLConnect(sql, null, result => {
         if (result.length > 0) {
             res.send({
