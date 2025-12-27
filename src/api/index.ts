@@ -71,26 +71,32 @@ const api = {
     /**
      *  项目基础信息 添加功能
     */
-    addFormInfo(params:object) {
-        return axios.get(base.baseURL + base.addFormInfo,{
+    addFormInfo(params: object) {
+        return axios.get(base.baseURL + base.addFormInfo, {
             params
         })
     },
     /**
      *  项目基础信息 删除 功能
     */
-    delFormInfo(params:object) {
-        return axios.get(base.baseURL + base.delFormInfo,{
+    delFormInfo(params: object) {
+        return axios.get(base.baseURL + base.delFormInfo, {
             params
         })
     },
     /**
      *  项目基础信息 编辑 功能  --  预更新
     */
-    preFormInfo(params:object) {
-        return axios.get(base.baseURL + base.preFormInfo,{
+    preFormInfo(params: object) {
+        return axios.get(base.baseURL + base.preFormInfo, {
             params
         })
+    },
+    /**
+     *  项目基础信息 编辑 功能  --  更新
+    */
+    updateFormInfo(id: number, params: object) {
+        return axios.put(base.baseURL + base.updateFormInfo + id, params)
     },
 
 }

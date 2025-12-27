@@ -258,6 +258,37 @@ router.get("/project/update/pre", (req, res) => {
     })
 })
 
+/**
+ *      隧道项目基础信息  编辑  功能  --  修改
+ *          restFull  API
+ *                  get 、post 、put 、del...
+ * 
+*/
+// postman 测试
+router.put("/project/update/:id", (req, res) => {
+    const id = req.params.id;   //  接收 上面的 :id
+    const { name, code, money, address, duration, startTime, endTime, tunnelNumber, status, remark } = req.body;
+    //  sql 更新语句 需要对应上面的 数据  根据id 查找
+    const sql = "update project set name=?,code=?,money=?,address=?,duration=?,startTime=?,endTime=?,tunnelNumber=?,status=?,remark=? where id=?";
+    //  数组要对应上面的sql数据  11 条数据
+    const arr = [name, code, money, address, duration, startTime, endTime, tunnelNumber, status, remark,id];
+    SQLConnect(sql, arr, result => {
+        if (result.affectedRows > 0) {
+            res.send({
+                status: 200,
+                msg: "修改成功"
+            })
+        } else {
+            res.send({
+                status: 500,
+                msg: "修改失败"
+            })
+        }
+    })
+})
+
+
+
 //  导出 router 让外部可以访问
 // module.exports = router
 export default router //      --   ts写法
