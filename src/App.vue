@@ -33,4 +33,25 @@ body,
 .el-form-item {
   margin-bottom: 0 !important;
 }
+
+
+/* 1. 针对所有 el-dropdown 的触发元素 */
+.el-dropdown-link:focus,
+.el-dropdown-link:focus-visible,
+.el-dropdown-selfdefine:focus,
+.el-dropdown-selfdefine:focus-visible {
+  outline: none !important;
+}
+
+/* 2. 针对可能出现的其它可聚焦组件 (如按钮、输入框等) */
+/* :focus-visible 是现代浏览器更推荐的属性，它只在键盘导航时显示轮廓，鼠标点击时不显示 */
+:focus {
+  outline: none;
+}
+
+/* 3. 专门针对 Element Plus 下拉菜单的包裹层 */
+.el-dropdown:focus,
+.el-dropdown-menu:focus {
+  outline: none !important;
+}
 </style>
