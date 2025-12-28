@@ -7,6 +7,9 @@
 <script setup lang="ts">
 import { RouterView } from 'vue-router'
 
+//  默认初始化 中文 
+localStorage.setItem("lang", "zh")
+
 </script>
 
 

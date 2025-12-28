@@ -11,17 +11,39 @@
                 </el-icon>
             </div>
         </div>
+        <!-- 面包屑 -->
         <div class="topNav-breadcrumb">
             <el-breadcrumb separator="/">
                 <!-- <el-breadcrumb-item :to="{ path: '/' }">返回首页</el-breadcrumb-item> -->
-                <el-breadcrumb-item>当前</el-breadcrumb-item>
+                <!-- 用  i18n 加载 文本  实现 中英文切换 -->
+                <el-breadcrumb-item>{{ $t('message.navs') }}</el-breadcrumb-item>
                 <!-- 直接拿仓库的  地址  防止刷新回到初始状态 -->
                 <el-breadcrumb-item>{{ ControlMenuStore.breadcrumb }}</el-breadcrumb-item>
                 <!-- <el-breadcrumb-item>{{ breadcrumb }}</el-breadcrumb-item> -->
             </el-breadcrumb>
         </div>
+
+        <!-- 中英文切换 -->
+        <div class="topNav-lang">
+            <el-dropdown class="example-showcase">
+                <span class="el-dropdown-link">
+                    语言切换
+                    <el-icon class="el-icon--right">
+                        <ArrowDown />
+                    </el-icon>
+                </span>
+                <template #dropdown>
+                    <el-dropdown-menu>
+                        <el-dropdown-item @click="changeLang('zh')">中文</el-dropdown-item>
+                        <el-dropdown-item @click="changeLang('en')">英文</el-dropdown-item>
+                    </el-dropdown-menu>
+                </template>
+            </el-dropdown>
+        </div>
+
+        <!-- 个人中心 / 退出登录 -->
         <div class="topNav-user">
-            <el-dropdown>
+            <el-dropdown class="example-showcase">
                 <span class="el-dropdown-link">
                     {{ loginStore.username }}
                     <el-icon class="el-icon--right">
@@ -39,6 +61,7 @@
                 </template>
             </el-dropdown>
         </div>
+
     </div>
 </template>
 
@@ -59,6 +82,7 @@ const ControlMenuStore = useControlMenuStore()
  */
 
 import { useLoginStore } from '@/stores/loginStore';
+
 // import { ref } from 'vue';
 const loginStore = useLoginStore()
 
@@ -97,10 +121,23 @@ function openMenu() {
 //     breadcrumb.value = ControlMenuStore.breadcrumb
 // }
 
+/**
+ *      语言切换 
+*/
+//  中英文切换
+function changeLang(lang: string) {
+    console.log(lang);
+    localStorage.setItem("lang", lang)
+    //  语言切换 刷新UI
+    location.reload()
+}
+
+
+
+
 </script>
 
 <style lang="scss" scoped>
-
 .topNav {
     //  侧边栏收起的时候需要让他填充剩余空间
     //  这里已经满了 所以我们可以向上找父容器  --  layout-right-container
@@ -133,14 +170,35 @@ function openMenu() {
     }
 
     .topNav-user {
-        cursor: pointer;
-        font-size: 15px;
-        position: absolute;
-        right: 20px;
-        top: 20px;
-        
-        .el-dropdown-link{
-            font-size: 18px;
+
+        //  前面写这个 忘记调试了 优化了 admin旁边的箭头位置
+        .example-showcase {
+
+            .el-dropdown-link {
+                cursor: pointer;
+                display: flex;
+                align-items: center;
+                font-size: 18px;
+            }
+
+            position: absolute;
+            right: 20px;
+            top: 20px;
+        }
+    }
+
+    .topNav-lang {
+        @extend .topNav-user;
+
+        .example-showcase {
+            position: absolute;
+            right: 120px;
+            top: 20px;
+
+            .el-dropdown-link {
+                font-size: 15px;
+            }
+
         }
     }
 }

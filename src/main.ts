@@ -11,6 +11,13 @@ import router from './router/index.ts'
 
 import echarts from './plugins/echarts.ts'  //  引入 自己定义(封装)的 echarts 插件
 
+import i18n from './i18n/i18n.ts'       //      引入  i18n  国际化(语言切换)
+
+//  el 组件的语言切换(中英文 常见)
+import ElementPlus from 'element-plus'  //  引入
+import zhCn from 'element-plus/es/locale/lang/zh-cn'
+import en from 'element-plus/es/locale/lang/en'
+
 const app = createApp(App)
 
 const pinia = createPinia()   //  创建 pinia 
@@ -20,5 +27,11 @@ app.use(echarts)    //  使用 自己定义(封装)的 echarts 插件
 app.use(pinia)
 
 app.use(router)
+
+app.use(i18n)
+
+app.use(ElementPlus, {
+    locale: localStorage.getItem("lang") === "zh" ? zhCn : en
+})
 
 app.mount('#app')
