@@ -23,6 +23,33 @@ import pieData from './data/pie.ts'
 /*
  *  登录接口   --  index.ts 写了个 /api 主入口 ，所以这里需要  /api+/login
  * */
+
+
+// 验证 Token 的中间件
+const verifyToken = (req, res, next) => {
+    // 1. 从请求头拿到 Token
+    // 这里的格式通常是 "Bearer <token>"，所以需要分割字符串
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(' ')[1];
+
+    if (!token) {
+        return res.status(401).send({ msg: "未提供Token，请登录" });
+    }
+
+    // 2. 开始验证
+    jwt.verify(token, jwtSecret.secret, (err, user) => {
+        if (err) {
+            // 验证失败：Token伪造或者过期
+            return res.status(403).send({ msg: "Token无效或已过期" });
+        }
+        
+        // 3. 验证成功：把解出来的数据挂载到 req 对象上，方便后面的接口使用
+        req.user = user;
+        next(); // 通行，继续执行后面的路由逻辑
+    });
+};
+
+
 router.post('/login', (req, res) => {
     //  接收客户端的参数：username password
     const { username, password } = req.body;
@@ -62,7 +89,7 @@ router.post('/login', (req, res) => {
  *  用户权限 管理
 */
 
-router.get("/router", (req, res) => {
+router.get("/router",verifyToken, (req, res) => {
     const user = url.parse(req.url, true).query.user;
     switch (user) {
         case "admin":
@@ -113,7 +140,7 @@ router.get("/pie", (req, res) => {
 /**
  *    隧道信息查询
 */
-router.get("/project/all", (req, res) => {
+router.get("/project/all",verifyToken, (req, res) => {
     //  分页查询
     //     || 1 --> 保底机制  当用户不输入  list?page=1 的时候，页面就是第一页数据
     var page = url.parse(req.url, true).query.page || 1;
@@ -138,7 +165,7 @@ router.get("/project/all", (req, res) => {
 /**
  *      隧道模糊查询
  */
-router.get("/project/search", (req, res) => {
+router.get("/project/search",verifyToken, (req, res) => {
     //  接收参数：查询内容
     const search = url.parse(req.url, true).query.search;
     //  模糊查询sql语句编写  name code address remark  (数据库表头 number 修改为 code)
@@ -162,7 +189,7 @@ router.get("/project/search", (req, res) => {
  *      获得总条数据
  */
 
-router.get("/project/total", (req, res) => {
+router.get("/project/total",verifyToken, (req, res) => {
     const sql = "select count(*) from project where id";
     SQLConnect(sql, null, result => {
         if (result.length > 0) {
@@ -183,7 +210,7 @@ router.get("/project/total", (req, res) => {
  *      隧道项目基础信息 添加 功能
 */
 
-router.get('/project/add', (req, res) => {
+router.get('/project/add',verifyToken, (req, res) => {
     //      添加   可以为空
     var name = url.parse(req.url, true).query.name || "";
     var code = url.parse(req.url, true).query.code || "";
@@ -217,7 +244,7 @@ router.get('/project/add', (req, res) => {
  *          隧道项目基础信息  删除 功能 
 */
 
-router.get("/project/del", (req, res) => {
+router.get("/project/del", verifyToken,(req, res) => {
     var id = url.parse(req.url, true).query.id;
     var sql = "delete from project where id=?";
     SQLConnect(sql, [id], result => {
@@ -240,7 +267,7 @@ router.get("/project/del", (req, res) => {
  *          隧道项目基础信息  编辑 功能    --   预更新
 */
 
-router.get("/project/update/pre", (req, res) => {
+router.get("/project/update/pre", verifyToken,(req, res) => {
     var id = url.parse(req.url, true).query.id;
     var sql = "select *  from project where id=?";
     SQLConnect(sql, [id], result => {
@@ -265,7 +292,7 @@ router.get("/project/update/pre", (req, res) => {
  * 
 */
 // postman 测试
-router.put("/project/update/:id", (req, res) => {
+router.put("/project/update/:id",verifyToken, (req, res) => {
     const id = req.params.id;   //  接收 上面的 :id
     const { name, code, money, address, duration, startTime, endTime, tunnelNumber, status, remark } = req.body;
     //  sql 更新语句 需要对应上面的 数据  根据id 查找

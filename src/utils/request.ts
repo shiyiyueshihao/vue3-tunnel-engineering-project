@@ -1,6 +1,8 @@
 import axios from "axios"           //  引入axios( 别忘了终端导入依赖 )
 import qs from "querystring" // 别忘了安装依赖
 
+import { useLoginStore } from "@/stores/loginStore";
+
 //  创建判断出错点函数
 /**
  *  错误处理
@@ -59,14 +61,15 @@ instance.interceptors.request.use(
             config.data = qs.stringify(config.data)
         }
 
-        // // 2. 新增：自动携带token（结合持久化的token）  --  因为需要 vuex 所以注释一下
-        // const token = store.state.token // 从Vuex获取token（已同步localStorage）
-        // if (token) {
-        //     // 确保headers存在（避免undefined报错）
-        //     config.headers = config.headers || {}
-        //     // 设置Authorization头（格式按后端要求，这里用Bearer示例）
-        //     config.headers.Authorization = `Bearer ${token}`
-        // }
+        // 2. 新增：自动携带token（结合持久化的token）
+        const loginStore = useLoginStore()
+        const token = loginStore.token   // 从Pinia获取token
+        if (token) {
+            // 确保headers存在（避免undefined报错）
+            config.headers = config.headers || {}
+            // 设置Authorization头（格式按后端要求，这里用Bearer示例）
+            config.headers.Authorization = `Bearer ${token}`
+        }
 
         return config
     },
@@ -75,13 +78,18 @@ instance.interceptors.request.use(
 )
 //  响应拦截
 instance.interceptors.response.use(
+    //  成功处理
     response => response.status === 200 ? Promise.resolve(response) : Promise.reject(response),
-    //  成功了，你好我好大家好
-    //  失败了，开始找背锅侠了，我们应该更多的精力放在 如果失败了我们应该怎么办 这件事上
+    //  失败处理
     error => {
         const { response } = error
-        if (response) {
-            errorHandler(response.status, response.info)
+        if (response && response.status === 403) {
+            // 这里的 403 对应你后端验证失败的状态
+            alert("登录已过期或非法访问，请重新登录");
+            const loginStore = useLoginStore();
+            loginStore.token = ''; // 清除 Pinia 里的 Token
+            localStorage.removeItem('token'); // 清除本地
+            window.location.href = '/login'; // 强制跳回登录
         } else {
             console.log("断网了~")
         }

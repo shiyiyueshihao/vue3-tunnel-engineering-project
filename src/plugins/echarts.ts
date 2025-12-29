@@ -185,50 +185,50 @@ export default {
     app.config.globalProperties.$chinaMap = (elementId: string) => {
       let myChart = echarts.init(document.getElementById(elementId))
       //  注册地图
-      echarts.registerMap("china",chinaMapSource as any)
+      echarts.registerMap("china", chinaMapSource as any)
 
-      var option ={
+      var option = {
         //  鼠标点击弹窗
-        tooltip:{
-          triggerOn:"mousemove",  //  点击触发
-          enterable:true  //  是否出现 弹框
+        tooltip: {
+          triggerOn: "mousemove",  //  点击触发
+          enterable: true  //  是否出现 弹框
         },
         //  图例
-        visualMap:{
-          origin:"vertical",
-          type:"piecewise",
-          pieces:[
-            {min:0,max:10,color:"#fff"},
-            {min:10,max:20,color:"#fdfdcf"},
-            {min:20,max:30,color:"#fe9e83"},
-            {min:30,max:40,color:"#e55a4e"},
-            {min:40,max:50,color:"#4f070d"},
-            {min:50,max:100,color:"#ff0000"},
+        visualMap: {
+          origin: "vertical",
+          type: "piecewise",
+          pieces: [
+            { min: 0, max: 10, color: "#fff" },
+            { min: 10, max: 20, color: "#fdfdcf" },
+            { min: 20, max: 30, color: "#fe9e83" },
+            { min: 30, max: 40, color: "#e55a4e" },
+            { min: 40, max: 50, color: "#4f070d" },
+            { min: 50, max: 100, color: "#ff0000" },
           ]
         },
-        series:[{
-          name:"中国地图",
-          type:"map",
-          map:"china",
-          roam:true,     //  鼠标滚轮是否可以缩放
-          zoom:1.2, //  默认地图的倍数
-          label:{
-            show:true,
-            fontSize:10,      //  字体大小
+        series: [{
+          name: "中国地图",
+          type: "map",
+          map: "china",
+          roam: true,     //  鼠标滚轮是否可以缩放
+          zoom: 1.2, //  默认地图的倍数
+          label: {
+            show: true,
+            fontSize: 10,      //  字体大小
           },
-          itemStyle:{
-            areaColor:"rgba(255,255,255,1)",
-            borderColor:"rgba(0,0,0,0.8)"
+          itemStyle: {
+            areaColor: "rgba(255,255,255,1)",
+            borderColor: "rgba(0,0,0,0.8)"
           },
           //  依据 json (也可以按照渲染出来的地图样式来)  --  名字对应 值自己写
-          data:[
-            {name:"内蒙古自治区",value:80},
-            {name:"黑龙江省",value:20},
-            {name:"山东省",value:30},
-            {name:"河南省",value:40},
-            {name:"四川省",value:38},
-            {name:"广西壮族自治区",value:18},
-            {name:"西藏自治区",value:28},
+          data: [
+            { name: "内蒙古自治区", value: 80 },
+            { name: "黑龙江省", value: 20 },
+            { name: "山东省", value: 30 },
+            { name: "河南省", value: 40 },
+            { name: "四川省", value: 38 },
+            { name: "广西壮族自治区", value: 18 },
+            { name: "西藏自治区", value: 28 },
           ]
         }]
       }

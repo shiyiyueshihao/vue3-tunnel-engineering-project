@@ -9,11 +9,11 @@
                 <el-form-item>
                     <!-- prefix-icon  加前缀 suffix 加后缀 -->
                     <el-input :prefix-icon="User" v-model="user.username" type="text" placeholder="请输入账号"
-                        @keyup.enter="loginHandler" />
+                        @keyup.enter="loginHandler" style="margin-bottom: 15px;" />
                 </el-form-item>
                 <el-form-item>
                     <el-input :prefix-icon="Lock" v-model="user.password" :type="showPassword ? 'text' : 'password'"
-                        placeholder="请输入密码(最小长度为6最大长度为16)" maxlength="16" minlength="6" @keyup.enter="loginHandler">
+                        placeholder="请输入密码(最小长度为6最大长度为16)" maxlength="16" minlength="6" @keyup.enter="loginHandler" style="margin-bottom: 15px;">
                         <!-- @keyup.enter="loginHandler" 监听回车进行登录 -->
                         <!-- 通过 #suffix 在 el-input 内部加后缀 自己写js逻辑-->
                         <template #suffix>
@@ -194,6 +194,7 @@ function loginHandler() {
             transition: width 500ms ease;
 
             margin: 0 auto;
+
         }
 
         .button {
