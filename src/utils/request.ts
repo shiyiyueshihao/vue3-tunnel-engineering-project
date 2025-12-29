@@ -61,7 +61,7 @@ instance.interceptors.request.use(
             config.data = qs.stringify(config.data)
         }
 
-        // 2. 新增：自动携带token（结合持久化的token）
+        // 自动携带token（结合持久化的token）
         const loginStore = useLoginStore()
         const token = loginStore.token   // 从Pinia获取token
         if (token) {

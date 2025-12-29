@@ -54,4 +54,19 @@ body,
 .el-dropdown-menu:focus {
   outline: none !important;
 }
+
+/*  针对Tree 树形控件 做 字体大小调整 */
+.is-truncated {
+  font-size: 16px !important;
+
+}
+
+/*  针对Tree 树形控件 做 选中样式修改  --  选中框背景颜色 */
+.is-current .el-tree-node__content{
+  background-color: antiquewhite !important;
+}
+/*  针对Tree 树形控件 做 选中样式修改  --  字体颜色 */
+.is-current .el-tree-node__content .el-tree-node__label{
+  color: blue;
+}
 </style>

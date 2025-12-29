@@ -42,7 +42,7 @@ const verifyToken = (req, res, next) => {
             // 验证失败：Token伪造或者过期
             return res.status(403).send({ msg: "Token无效或已过期" });
         }
-        
+
         // 3. 验证成功：把解出来的数据挂载到 req 对象上，方便后面的接口使用
         req.user = user;
         next(); // 通行，继续执行后面的路由逻辑
@@ -89,7 +89,7 @@ router.post('/login', (req, res) => {
  *  用户权限 管理
 */
 
-router.get("/router",verifyToken, (req, res) => {
+router.get("/router", verifyToken, (req, res) => {
     const user = url.parse(req.url, true).query.user;
     switch (user) {
         case "admin":
@@ -140,7 +140,7 @@ router.get("/pie", (req, res) => {
 /**
  *    隧道信息查询
 */
-router.get("/project/all",verifyToken, (req, res) => {
+router.get("/project/all", verifyToken, (req, res) => {
     //  分页查询
     //     || 1 --> 保底机制  当用户不输入  list?page=1 的时候，页面就是第一页数据
     var page = url.parse(req.url, true).query.page || 1;
@@ -165,7 +165,7 @@ router.get("/project/all",verifyToken, (req, res) => {
 /**
  *      隧道模糊查询
  */
-router.get("/project/search",verifyToken, (req, res) => {
+router.get("/project/search", verifyToken, (req, res) => {
     //  接收参数：查询内容
     const search = url.parse(req.url, true).query.search;
     //  模糊查询sql语句编写  name code address remark  (数据库表头 number 修改为 code)
@@ -189,7 +189,7 @@ router.get("/project/search",verifyToken, (req, res) => {
  *      获得总条数据
  */
 
-router.get("/project/total",verifyToken, (req, res) => {
+router.get("/project/total", verifyToken, (req, res) => {
     const sql = "select count(*) from project where id";
     SQLConnect(sql, null, result => {
         if (result.length > 0) {
@@ -210,7 +210,7 @@ router.get("/project/total",verifyToken, (req, res) => {
  *      隧道项目基础信息 添加 功能
 */
 
-router.get('/project/add',verifyToken, (req, res) => {
+router.get('/project/add', verifyToken, (req, res) => {
     //      添加   可以为空
     var name = url.parse(req.url, true).query.name || "";
     var code = url.parse(req.url, true).query.code || "";
@@ -244,7 +244,7 @@ router.get('/project/add',verifyToken, (req, res) => {
  *          隧道项目基础信息  删除 功能 
 */
 
-router.get("/project/del", verifyToken,(req, res) => {
+router.get("/project/del", verifyToken, (req, res) => {
     var id = url.parse(req.url, true).query.id;
     var sql = "delete from project where id=?";
     SQLConnect(sql, [id], result => {
@@ -267,7 +267,7 @@ router.get("/project/del", verifyToken,(req, res) => {
  *          隧道项目基础信息  编辑 功能    --   预更新
 */
 
-router.get("/project/update/pre", verifyToken,(req, res) => {
+router.get("/project/update/pre", verifyToken, (req, res) => {
     var id = url.parse(req.url, true).query.id;
     var sql = "select *  from project where id=?";
     SQLConnect(sql, [id], result => {
@@ -292,13 +292,13 @@ router.get("/project/update/pre", verifyToken,(req, res) => {
  * 
 */
 // postman 测试
-router.put("/project/update/:id",verifyToken, (req, res) => {
+router.put("/project/update/:id", verifyToken, (req, res) => {
     const id = req.params.id;   //  接收 上面的 :id
     const { name, code, money, address, duration, startTime, endTime, tunnelNumber, status, remark } = req.body;
     //  sql 更新语句 需要对应上面的 数据  根据id 查找
     const sql = "update project set name=?,code=?,money=?,address=?,duration=?,startTime=?,endTime=?,tunnelNumber=?,status=?,remark=? where id=?";
     //  数组要对应上面的sql数据  11 条数据
-    const arr = [name, code, money, address, duration, startTime, endTime, tunnelNumber, status, remark,id];
+    const arr = [name, code, money, address, duration, startTime, endTime, tunnelNumber, status, remark, id];
     SQLConnect(sql, arr, result => {
         if (result.affectedRows > 0) {
             res.send({
@@ -314,6 +314,84 @@ router.put("/project/update/:id",verifyToken, (req, res) => {
     })
 })
 
+/**
+ *      隧道设计信息 tree 列表 一级
+ * 
+*/
+router.get("/tunnel/list", verifyToken, (req, res) => {
+    const sql = "select * from tunnel"
+    SQLConnect(sql, null, result => {
+        if (result.length > 0) {
+            res.send({
+                status: 200,
+                result
+            })
+        } else {
+            res.send({
+                status: 500,
+                msg: "暂无数据"
+            })
+        }
+    })
+})
+
+
+/**
+ *      隧道设计信息 tree 列表 二级
+ * 
+*/
+router.get("/tunnel/list/child", verifyToken, (req, res) => {
+    const cid = url.parse(req.url, true).query.cid
+    if (!cid) {
+        return res.send({
+            status: 400,
+            msg: "缺少必要参数 cid"
+        })
+    }
+    const sql = "select * from tunnelchild where cid=?"
+    SQLConnect(sql, [cid], result => {
+        if (result.length > 0) {
+            res.send({
+                status: 200,
+                result
+            })
+        } else {
+            res.send({
+                status: 500,
+                msg: "暂无数据"
+            })
+        }
+    })
+})
+
+
+/**
+ *      隧道设计信息 tree 列表 三级
+ * 
+*/
+router.get("/tunnel/list/child/grandchild", verifyToken, (req, res) => {
+    const gid = url.parse(req.url, true).query.gid
+    if (!gid) {
+        return res.send({
+            status: 400,
+            msg: "缺少必要参数 gid"
+        })
+    }
+    const sql = "select * from tunnelgrandchild where gid=?"
+    SQLConnect(sql, [gid], result => {
+        if (result.length > 0) {
+            res.send({
+                status: 200,
+                result
+            })
+        } else {
+            res.send({
+                status: 500,
+                msg: "暂无数据"
+            })
+        }
+    })
+})
 
 
 //  导出 router 让外部可以访问

@@ -98,6 +98,34 @@ const api = {
     updateFormInfo(id: number, params: object) {
         return axios.put(base.baseURL + base.updateFormInfo + id, params)
     },
+    /**
+     *  隧道设计信息  --  一级
+    */
+    tunnelList() {
+        return axios.get(base.baseURL + base.tunnelList)
+    },
+    /**
+     *  隧道设计信息  --  二级
+     * @param cid  一级 的cid
+    */
+    tunnelListChild(cid: string) {
+        return axios.get(base.baseURL + base.tunnelListChild, {
+            params: {
+                cid: cid
+            }
+        })
+    },
+    /**
+     *  隧道设计信息  --  三级
+     * @param gid  二级 的gid
+    */
+    tunnelListGrandChild(gid: string) {
+        return axios.get(base.baseURL + base.tunnelListGrandChild, {
+            params: {
+                gid: gid
+            }
+        })
+    },
 
 }
 
