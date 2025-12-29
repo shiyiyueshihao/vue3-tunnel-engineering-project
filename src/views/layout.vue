@@ -42,11 +42,11 @@ onMounted(() => {
     }).then(res => {
         if (res.data.status === 200) {
             console.log(res.data);
-            ControlMenuStore.menus = res.data.menuData.menus
             //  判断当前用户权限
             if (loginStore.permission === "admin") {
                 router.addRoute('layout', workManagementRoute)
             }
+            ControlMenuStore.menus = res.data.menuData.menus
         }
     })
 })

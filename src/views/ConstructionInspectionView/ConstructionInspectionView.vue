@@ -1,5 +1,5 @@
 <template>
-    <h3>施工监控监测</h3>
+    <router-view></router-view>
 </template>
 
 <script setup lang="ts">

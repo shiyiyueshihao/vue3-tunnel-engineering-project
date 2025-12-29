@@ -7,7 +7,7 @@ import layout from '@/views/layout.vue'
 import { useLoginStore } from '@/stores/loginStore'
 import { useControlMenuStore } from '@/stores/ControlMenuStore'
 import workManagementRoute from '@/router/dynamicRoute.ts'
-
+import api from '@/api'
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
@@ -108,34 +108,62 @@ const router = createRouter({
       name: 'login',
       component: Login
     },
-    //  404 路径匹配规则   没有找到对应的路径地址
-    {
-      path: '/:pathMatch(.*)*',
-      name: 'notfound',
-      component: () => import('../components/NotFound/NotFound.vue'),
-    }
   ],
 })
 
 
+// 定义404页面路由 404 路径匹配规则   没有找到对应的路径地址
+const notFoundRoute = {
+  path: '/:pathMatch(.*)*',
+  name: 'notfound',
+  component: () => import('../components/NotFound/NotFound.vue'),
+}
 
-//  路由前置守卫  -- beforeEach
-router.beforeEach((to, from, next) => {
-  //  登录验证
-  if (to.meta.requireLogin) {
-    //  如果有 token 也直接跳转 否则 去登录页面
-    const loginStore = useLoginStore()
 
-    if (!loginStore.token) {
-      next({
-        path: "/login"
-      })
-    } else {
-      next()
-    }
-  } else {
-    next()
+// 路由守卫
+router.beforeEach(async (to, from, next) => {
+  const loginStore = useLoginStore()
+  const controlMenuStore = useControlMenuStore()
+
+  // 登录拦截
+  if (to.path !== '/login' && !loginStore.token) {
+    return next('/login')
   }
+
+  // 检查动态路由是否已加载 (以 404 路由是否存在为基准)
+  const isRouterLoaded = router.hasRoute('notfound')
+
+  if (loginStore.token && !isRouterLoaded) {
+    try {
+      // 如果 menus 是空的，直接在这里调一次 API
+      if (controlMenuStore.menus.length === 0) {
+        const res = await api.getRouter({ user: loginStore.permission })
+        if (res.data.status === 200) {
+          controlMenuStore.menus = res.data.menuData.menus
+        }
+      }
+
+      // 根据最新的 menus 数据动态添加路由
+      controlMenuStore.menus.forEach(item => {
+        if (item.path === '/workManagement' && loginStore.permission === 'admin') {
+          router.addRoute('layout', workManagementRoute)
+        }
+      })
+
+      // 最后添加 404，确保它在最末尾
+      router.addRoute(notFoundRoute)
+
+      // 重定向，让路由重新匹配新加载的路由表
+      return next({ ...to, replace: true })
+
+    } catch (error) {
+      console.error('动态路由加载失败', error)
+      return next('/login')
+    }
+  }
+
+  //  其他逻辑
+  next()
 })
 
 
