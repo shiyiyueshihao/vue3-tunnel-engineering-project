@@ -1,14 +1,21 @@
 <template>
-    <div class="tree-container">
-        <el-tree style="max-width: 350px;" :props="props" :load="loadNode" lazy />
+    <div class="tunnelDesign">
+        <div class="tree-container">
+            <el-tree  style="width: 350px;" :props="props" :load="loadNode" lazy  />
+        </div>
+        <div class="content-container">
+            <template v-for="(value,index) in content.list" :key="index">
+                <p class="content-item">{{ value.name }}</p>
+            </template>
+        </div>
+
     </div>
 </template>
 
 <script lang="ts" setup>
 import api from '@/api'
-import type { LoadFunction } from 'element-plus'
+import type { LoadFunction  } from 'element-plus'
 import { reactive } from 'vue'
-
 
 interface Tree {
     name: string
@@ -26,11 +33,9 @@ const props = {
     isLeaf: 'leaf',     //  层级
 }
 
-const data: dataTree = reactive({
+const content: dataTree = reactive({
     list: []
 })
-
-
 
 
 const loadNode: LoadFunction = (node, resolve) => {
@@ -40,6 +45,7 @@ const loadNode: LoadFunction = (node, resolve) => {
         api.tunnelList().then(res => {
             if (res.data.status === 200) {
                 console.log(res.data.result)
+                content.list = res.data.result
                 //  必须 调用 reslove 才能渲染
                 resolve(res.data.result)
             }
@@ -51,6 +57,7 @@ const loadNode: LoadFunction = (node, resolve) => {
         api.tunnelListChild(currentCId).then(res => {
             if (res.data.status === 200) {
                 console.log(res.data.result)
+                content.list = res.data.result
                 resolve(res.data.result)
             } else {
                 resolve([]) // 没数据传空数组，防止转圈
@@ -63,6 +70,7 @@ const loadNode: LoadFunction = (node, resolve) => {
         api.tunnelListGrandChild(currentGid).then(res => {
             if (res.data.status === 200) {
                 console.log(res.data.result)
+                content.list = res.data.result
                 // 如果这是最后一层，可以在数据里标记 leaf: true
                 const data = res.data.result.map((item: any) => ({
                     ...item,
@@ -74,7 +82,26 @@ const loadNode: LoadFunction = (node, resolve) => {
             }
         })
     }
+}
+
+
+</script>
+<style scoped lang="scss">
+.tunnelDesign {
+    display: flex;
+
+    .content-container {
+
+        background-color: white;
+        margin-left: 20px;
+
+        .content-item{
+            text-align: center;
+            width: 300px;
+            font-size: 18px;
+            padding: 5px 0;
+        }
+    }
 
 }
-</script>
-<style scoped></style>
+</style>
