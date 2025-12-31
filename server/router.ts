@@ -413,7 +413,7 @@ const storage = multer.diskStorage({
 });
 
 // 2. 增加限制配置
-const upload = multer({ 
+const upload = multer({
     storage: storage,
     // 限制文件大小
     limits: {
@@ -425,7 +425,7 @@ const upload = multer({
         const allowedTypes = ['.jpg', '.jpeg', '.png', '.pdf'];
         // 获取当前上传文件的后缀名
         const ext = path.extname(file.originalname).toLowerCase();
-        
+
         if (allowedTypes.includes(ext)) {
             cb(null, true); // 允许上传
         } else {
@@ -441,7 +441,7 @@ const upload = multer({
  *              3.2   按照 前端返回的信息   1.cid   2.gid  来确定子孙级别
  */
 
-router.post('/upload', (req: Request, res: Response) => {
+router.post('/upload', verifyToken, (req: Request, res: Response) => {
     upload.single('file')(req, res, (err: any) => {
         // 1. 错误捕获 (保持你之前的优秀逻辑)
         if (err) {
@@ -469,11 +469,11 @@ router.post('/upload', (req: Request, res: Response) => {
         }
 
         const filePath = `/uploads/${file.filename}`;
-        
+
         // 4. 执行精准更新
         // 使用模板字符串动态插入表名，使用 ? 绑定变量防止 SQL 注入
         const sql = `UPDATE ${tableName} SET file_url = ? WHERE id = ?`;
-        
+
         SQLConnect(sql, [filePath, id], (result: any) => {
             if (result && result.affectedRows > 0) {
                 res.send({

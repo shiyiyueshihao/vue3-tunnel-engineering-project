@@ -126,6 +126,30 @@ const api = {
             }
         })
     },
+    /**
+     * 隧道设计信息 -- 上传
+     * @param id   唯一 id 
+     * @param type 类型 ('child' 或 'grand')
+     * @param file 文件对象
+     */
+    tunnelUpload(id: number, type: string, file: File) {
+        // 1. 创建 FormData 对象
+        const formData = new FormData();
+
+        // 2. 将数据 append 进去
+        // 注意：这里的 'file' 必须对应后端 upload.single('file') 里的字符串
+        formData.append('file', file);
+        formData.append('id', id.toString());
+        formData.append('type', type);
+
+        // 3. 使用 POST 请求发送
+        return axios.post(base.baseURL + base.tunnelUpload, formData, {
+            headers: {
+                // 告诉后端这是一个多部分表单数据
+                'Content-Type': 'multipart/form-data'
+            }
+        });
+    }
 
 }
 
