@@ -19,6 +19,9 @@ import router from './router.ts'
 //  使用
 app.use('/api', router)
 
+//  静态资源访问：为了让前端能看到上传后的图片，后端需要配置静态资源托管
+app.use('/uploads', express.static('uploads'));
+
 app.listen(3000, () => {
     console.log("服务器运行在3000端口上");
 })

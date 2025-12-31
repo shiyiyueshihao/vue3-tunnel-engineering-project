@@ -16,6 +16,9 @@
 9.  sass
 10. 富文本编辑器  TinyMCE
         npm install tinymce@6.2.0 @tinymce/tinymce-vue@5.0.0
+11. 文件上传
+        需要安装 multer 库来解析文件数据 
+            npm install multer
 
 
 ##  编辑功能，数据回显

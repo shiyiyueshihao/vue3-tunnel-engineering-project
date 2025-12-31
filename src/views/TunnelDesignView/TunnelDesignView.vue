@@ -113,7 +113,7 @@ const handleNodeClick = (data: Tree, node: Node) => {
     console.log(node.level);
 
     //  二级表
-    if (node.level === 1) {
+    if (node.level === 2) {
         //  ts 约束类型  要存在 cid 才可调用接口
         if (data.cid) {
             api.tunnelListChild(data.cid).then(res => {
@@ -131,7 +131,7 @@ const handleNodeClick = (data: Tree, node: Node) => {
     }
 
     //  三级表
-    if (node.level === 2) {
+    if (node.level === 3) {
         //  ts 约束类型  要存在 gid 才可调用接口
         if (data.gid) {
             api.tunnelListGrandChild(data.gid).then(res => {

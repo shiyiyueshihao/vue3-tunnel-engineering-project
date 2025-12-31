@@ -13,6 +13,12 @@ import vipData from './data/vip.ts'
 import lineData from './data/line.ts'
 import pieData from './data/pie.ts'
 
+//  文件上传
+import type { Request, Response } from 'express';
+import multer from 'multer';
+import path from 'path';
+
+
 // 添加接口  --  测试
 // router.get('/list', (req, res) => {
 //     res.send({
@@ -392,6 +398,96 @@ router.get("/tunnel/list/child/grandchild", verifyToken, (req, res) => {
         }
     })
 })
+
+
+/**
+ *          tree树形控件 table  的 文件上传接口
+*/
+
+// 1. 配置存储
+const storage = multer.diskStorage({
+    destination: 'uploads/',
+    filename: (req, file, cb) => {
+        cb(null, `${Date.now()}-${file.originalname}`);
+    }
+});
+
+// 2. 增加限制配置
+const upload = multer({ 
+    storage: storage,
+    // 限制文件大小
+    limits: {
+        fileSize: 10 * 1024 * 1024 // 限制为 10MB，单位是字节 (Byte)
+    },
+    // 限制文件类型（后缀名）
+    fileFilter: (req, file, cb) => {
+        // 允许的文件后缀名
+        const allowedTypes = ['.jpg', '.jpeg', '.png', '.pdf'];
+        // 获取当前上传文件的后缀名
+        const ext = path.extname(file.originalname).toLowerCase();
+        
+        if (allowedTypes.includes(ext)) {
+            cb(null, true); // 允许上传
+        } else {
+            // 拒绝上传并抛出错误
+            cb(new Error('仅支持上传 JPG/PNG/PDF 格式的文件！') as any, false);
+        }
+    }
+});
+
+/**
+ *       3. 接口逻辑（保持不变，但增加错误处理）     
+ *              3.1.  按照数据库 id  和 file_url 存储 上传的文件  存到  uploads里去 
+ *              3.2   按照 前端返回的信息   1.cid   2.gid  来确定子孙级别
+ */
+
+router.post('/upload', (req: Request, res: Response) => {
+    upload.single('file')(req, res, (err: any) => {
+        // 1. 错误捕获 (保持你之前的优秀逻辑)
+        if (err) {
+            const msg = err.code === 'LIMIT_FILE_SIZE' ? '文件超过10MB' : err.message;
+            return res.send({ status: 500, msg });
+        }
+
+        // 2. 获取参数
+        const file = req.file;
+        const { id, type } = req.body; // type 用来判断是哪张表：'child' 或 'grand'
+
+        if (!file || !id || !type) {
+            return res.send({ status: 500, msg: '参数不完整：缺少文件、ID或分类类型' });
+        }
+
+        // 3. 动态确定目标表名
+        // 这样以后如果你有表四 (tunnelgreatgrandchild)，只需在这里加一行
+        let tableName = '';
+        if (type === 'child') {
+            tableName = 'tunnelchild';
+        } else if (type === 'grand') {
+            tableName = 'tunnelgrandchild';
+        } else {
+            return res.send({ status: 500, msg: '错误的分类类型' });
+        }
+
+        const filePath = `/uploads/${file.filename}`;
+        
+        // 4. 执行精准更新
+        // 使用模板字符串动态插入表名，使用 ? 绑定变量防止 SQL 注入
+        const sql = `UPDATE ${tableName} SET file_url = ? WHERE id = ?`;
+        
+        SQLConnect(sql, [filePath, id], (result: any) => {
+            if (result && result.affectedRows > 0) {
+                res.send({
+                    status: 200,
+                    msg: `上传成功并关联至${tableName}`,
+                    url: filePath,
+                    data: { id, type }
+                });
+            } else {
+                res.send({ status: 500, msg: '关联失败，请检查ID是否存在于该表中' });
+            }
+        });
+    });
+});
 
 
 //  导出 router 让外部可以访问
