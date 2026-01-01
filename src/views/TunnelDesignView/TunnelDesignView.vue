@@ -26,7 +26,7 @@
         </div>
 
         <!-- 弹出对话框 然后再 上传文件 -->
-        <el-dialog v-model="dialogUploadVisible" title="文件上传" width="500" :before-close="handleClose" align="center">
+        <el-dialog v-model="dialogUploadVisible" title="文件上传" width="500" align="center">
 
             <!--  upload  使用说明 细则
     
@@ -71,7 +71,8 @@
 
             <el-upload ref="upload" class="upload-demo" action="#" :limit="1" :show-file-list="true"
                 :before-upload="beforeUpload" :auto-upload="false" :on-preview="handlePreview"
-                :http-request="uploadFileAction" :on-exceed="handleExceed">
+                :on-change="handleChange" :on-exceed="handleExceed" >
+                <!-- 文件上传  需要 在 网络请求中做类型判断并不能格式化不然文件会出错(后端拿不到数据) -->
                 <template #trigger>
                     <el-button type="primary">选择文件</el-button>
                 </template>
@@ -257,19 +258,8 @@ const fileID = ref<number>(0)
 //  定义 对话框的初始状态
 const dialogUploadVisible = ref<boolean>(false)
 
-// 关闭对话框之前
-const handleClose = (done: () => void) => {
-    ElMessageBox.confirm('文件未上传，确定关闭对话框?')
-        .then(() => {
-            done()
-        })
-        .catch(() => {
-            // catch error
-        })
-}
-
-//  定义文件  初始化
-const fileList = ref<UploadUserFile[]>([]);
+//  初始化文件
+const uploadFileInfo = ref()
 
 /** 
  *          上传按钮  触发对话框来上传
@@ -316,41 +306,29 @@ const beforeUpload: UploadProps['beforeUpload'] = (rawFile) => {
     return true;
 }
 
-/**
- *      移除文件前 的提示
-*/
-
-// const beforeRemove: UploadProps['beforeRemove'] = (uploadFile, uploadFiles) => {
-//     return ElMessageBox.confirm(
-//         `撤销${uploadFile.name} 文件吗?`
-//     ).then(
-//         () => true,
-//         () => false
-//     )
-// }
-
-/**
- *      移除文件 事件
-*/
-
-// const handleRemove: UploadProps['onRemove'] = (file, uploadFiles) => {
-//     console.log(file, uploadFiles)
-//     return ElMessageBox.confirm(
-//         `撤销 ${file.name} 文件?`
-//     ).then(
-//         () => true,
-//         () => false
-//     )
-// }
 
 
 /**
- * 
+ *              预览   123456789
 */
 const handlePreview: UploadProps['onPreview'] = (uploadFile) => {
     console.log(uploadFile)
+
 }
 
+
+/** 
+ *              on-change 事件
+ *                  拿 文件 并 赋值 
+ * 
+*/
+
+const handleChange: UploadProps['onChange'] = (uploadFile, uploadFiles) => {
+  console.log(uploadFile);
+  
+  uploadFileInfo.value = uploadFile.raw
+}
+ 
 
 /**
  *          文件覆盖
@@ -369,46 +347,50 @@ const handleExceed: UploadProps['onExceed'] = (files, uploadFiles) => {
  *          提交上传 点击按钮之后会做 before-upload 检测  检测完毕之后触发该按钮事件
  */
 
-const submitUpload = () => {
-    upload.value!.submit()
+const submitUpload = async () => { // 1. 必须使用 async
 
-    console.log("上传")
-}
-
-
-/**
- *          提交 操作  http-request 拦截网络 自定义上传
- *              1.  唯一ID  在点击上传按钮的时候 scope.row 有
- *              2.  判断层级  点击左侧才会显示右侧 所以左侧点击判断层级 然后赋值给全局
- *              3.  文件  自定义http-request 有 options 里有 文件
- *                  逻辑 就是 用户必定点击左侧才能显示右侧  左侧用来判断层级右侧用来获取id 上传用来做请求
- */
-const uploadFileAction: UploadRequestHandler = (options: any) => {
-    console.log(options);
-    const { file } = options;
-
-    let uploadType = "";
+    let nodeType = ""
     if (nodeLevel.value === 2) {
-        uploadType = 'child';
+        nodeType = 'child'
     } else if (nodeLevel.value === 3) {
-        uploadType = 'grand';
+        nodeType = 'grand'
     }
-    return api.tunnelUpload(fileID.value, uploadType, file.name).then(res => {
+
+    // 校验：没选文件或者没获取到 ID 则不发请求
+    if (!uploadFileInfo.value) {
+        return ElMessage.error('请先选择文件！');
+    }
+    
+    try {
+        // 2. 核心：调用 API 并传入参数
+        console.log("准备发送请求：", { id: fileID.value, type: nodeType, file: uploadFileInfo.value });
+        
+        const res = await api.tunnelUpload(fileID.value, nodeType, uploadFileInfo.value);
+
+        // 3. 处理后端返回的结果
         if (res.data.status === 200) {
-            ElMessage.success("上传成功");
-            dialogUploadVisible.value = false;
-
-            //  加一个刷新列表 操作
-
+            ElMessage.success('上传成功！');
+            // 2查看后端返回的具体字段（根据你后端的逻辑）
+            console.log("文件存储路径：", res.data.url); // 对应后端的 filePath
+            console.log("成功消息：", res.data.msg);    // 对应后端的 '上传成功并关联至...'
+            
+            // 4. 上传成功后的清理工作
+            dialogUploadVisible.value = false; // 关闭对话框
+            uploadFileInfo.value = null;       // 清空临时文件变量
+            upload.value!.clearFiles();         // 清除 el-upload 组件界面的显示
+            
+            // 建议：此处可以调用一次列表刷新函数，让用户看到最新的数据状态
+        } else {
+            ElMessage.error(res.data.msg || '服务器返回错误');
         }
-        return res;
-    })
-        .catch(err => {
-            ElMessage.error("上传失败，请检查后端服务");
-            //  抛出错误
-            throw err; 
-        })
+    } catch (error) {
+        console.error("上传接口调用失败：", error);
+        ElMessage.error('网络请求异常，请检查后端服务');
+    }
 }
+
+
+
 
 /**
  *          预览 事件
@@ -433,9 +415,11 @@ function PreviewHandler(row: Tree) {
  *                          一眼就能看出哪个分段已经上传了图纸。
  *                  2.  上传后的自动刷新： 当你完成上传接口调用后，记得触发一次 Tree 数据的重新拉取（
  *                          或者局部更新节点数据），这样用户上传完就能立刻看到结果，不用手动刷新页面
+ *        
  * 
+ *         
+ * 预览 没写   --  搜 123456789
  * 
- *              
  * 
 */
 

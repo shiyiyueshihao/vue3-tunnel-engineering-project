@@ -57,9 +57,18 @@ instance.interceptors.request.use(
     config => {
         //  config:请求信息  ==>   请求头啊，公共地址啊等
         //  所有的post请求都需要增加一个参数的格式化    ==>  querystring.stringify(  ) 
-        if (config.method === "post" || config.method === "put") {
-            config.data = qs.stringify(config.data)
+
+        // 如果数据是 FormData 类型，证明是文件上传，直接放行，不执行 qs.stringify
+        if (config.data instanceof FormData) {
+            // 关键：删除默认的 Content-Type，让浏览器自动设置 boundary
+            if (config.headers) {
+                delete config.headers['Content-Type'];
+            }
+        } else if (config.method === "post" || config.method === "put") {
+            // 只有普通 JSON 对象才执行格式化
+            config.data = qs.stringify(config.data);
         }
+
 
         // 自动携带token（结合持久化的token）
         const loginStore = useLoginStore()

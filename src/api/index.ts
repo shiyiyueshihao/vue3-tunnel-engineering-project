@@ -1,4 +1,4 @@
-import { number } from 'echarts'
+
 import axios from '../utils/request.ts'
 import base from './base.ts'
 
@@ -138,17 +138,12 @@ const api = {
 
         // 2. 将数据 append 进去
         // 注意：这里的 'file' 必须对应后端 upload.single('file') 里的字符串
-        formData.append('file', file);
-        formData.append('id', id.toString());
+        formData.append('id', String(id));
         formData.append('type', type);
+        formData.append('file', file);
 
         // 3. 使用 POST 请求发送
-        return axios.post(base.baseURL + base.tunnelUpload, formData, {
-            headers: {
-                // 告诉后端这是一个多部分表单数据
-                'Content-Type': 'multipart/form-data'
-            }
-        });
+        return axios.post(base.baseURL + base.tunnelUpload, formData);
     }
 
 }

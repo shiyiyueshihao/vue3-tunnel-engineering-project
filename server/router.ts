@@ -17,7 +17,7 @@ import pieData from './data/pie.ts'
 import type { Request, Response } from 'express';
 import multer from 'multer';
 import path from 'path';
-
+import fs from 'fs'
 
 // 添加接口  --  测试
 // router.get('/list', (req, res) => {
@@ -406,8 +406,20 @@ router.get("/tunnel/list/child/grandchild", verifyToken, (req, res) => {
 
 // 1. 配置存储
 const storage = multer.diskStorage({
-    destination: 'uploads/',
+    // 修改 destination 为函数形式，更稳妥
+    destination: (req, file, cb) => {
+        const dir = 'uploads/';
+        // 检查文件夹是否存在，不存在则创建
+        if (!fs.existsSync(dir)) {
+            fs.mkdirSync(dir);
+        }
+        cb(null, dir);
+    },
     filename: (req, file, cb) => {
+        // 解决中文名乱码问题：强制转码
+        file.originalname = Buffer.from(file.originalname, "latin1").toString(
+            "utf8"
+        );
         cb(null, `${Date.now()}-${file.originalname}`);
     }
 });
