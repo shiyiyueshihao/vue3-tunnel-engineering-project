@@ -6,30 +6,85 @@
         </div>
         <div class="content-container" style="width: 100%;">
             <el-table :data="content.list" stripe>
-                <el-table-column prop="name" label="隧道名称" header-align="center" />
+                <el-table-column prop="name" label="隧道名称" header-align="center" width="180" />
                 <el-table-column prop="drawing_name" label="圈名" header-align="center" />
                 <el-table-column prop="drawing_no" label="图号" header-align="center" />
                 <el-table-column prop="leader" label="负责人" header-align="center" />
                 <el-table-column prop="status" label="状态" header-align="center" />
                 <el-table-column prop="progress" label="施工进度" header-align="center" />
                 <el-table-column prop="content" label="内容" header-align="center" show-overflow-tooltip />
-                <el-table-column fixed="right" label="编辑" header-align="center" align="center" width="150">
+                <el-table-column fixed="right" label="编辑" header-align="center" align="center" width="180">
                     <!-- 用 scope 那当前行的数据 -->
                     <template #default="scope">
                         <div class="operation-wrapper">
                             <el-button type="primary" size="small" @click="PreviewHandler(scope.row)">预览</el-button>
-                            <el-upload class="upload-demo" action="#" :limit="1" :show-file-list="false"
-                                :on-preview="handlePreview" :on-remove="handleRemove" :before-remove="beforeRemove"
-                                :on-exceed="handleExceed">
-                                <el-button type="primary" size="small" @click="UploadHandler(scope.row)">上传</el-button>
-                            </el-upload>
+                            <el-button type="primary" size="small" @click="UploadHandler(scope.row)">上传</el-button>
                         </div>
                     </template>
                 </el-table-column>
             </el-table>
         </div>
 
+        <!-- 弹出对话框 然后再 上传文件 -->
+        <el-dialog v-model="dialogUploadVisible" title="文件上传" width="500" :before-close="handleClose" align="center">
+
+            <!--  upload  使用说明 细则
+    
+                        on-change (文件状态改变时的钩子)：
+                            1.只要用户选了文件、或者文件上传成功/失败了，它都会被喊出来。
+                            2.用它来感知用户选好了文件，然后配合存好的 唯一ID 去调 API(自定义的API -- 三个参数)。
+
+                        before-upload (上传文件之前的钩子)：
+                            1.在文件还没发给后端之前，检查文件大不大（比如超过 10MB 不让传）、
+                                格式对不对（只能传图片）。如果这个函数返回 false，上传直接取消。
+
+                        auto-upload (是否自动上传)：默认为 true（选完立刻发请求）。
+                            1.要手动调自己的 api.tunnelUpload，所以必须把它设为 false，
+                                否则它会绕过逻辑去调 action 里的地址。
+
+                        http-request (覆盖默认上传行为)：
+                            自定义请求
+
+                        action (必选参数，上传的地址)：
+                            如果 http-request 或者完全手动控制，可以随便填个 # 占位。
+
+                        limit (允许上传的最大数量)：
+                            每次只能选x张图，选多了它会报错（触发 on-exceed）。
+
+                        show-file-list (是否显示文件列表)：
+                            按钮下面要不要列出你刚才选的文件名。   配合  on-preview
+                    
+                        on-preview
+                            当 show-file-list 为 true 时，文件上传成功后会变成一个蓝色的链接，用户点击那个文件名时触发
+
+                        before-remove
+                            删除 之前   点击删除可以做 警告弹窗效果
+
+                        on-remove
+                            当文件从显示列表中被删掉后触发 删除完毕可以提示文件已删除  配合  on-preview
+
+                        on-exceed
+                            文件超出限制  配合limit   如果用户选择了多于限制个数的数量文件，则会触发
+
+                        disabled (是否禁用)： 
+             -->
+
+            <el-upload ref="upload" class="upload-demo" action="#" :limit="1" :show-file-list="true"
+                :before-upload="beforeUpload" :auto-upload="false" :on-preview="handlePreview"
+                :http-request="uploadFileAction" :on-exceed="handleExceed">
+                <template #trigger>
+                    <el-button type="primary">选择文件</el-button>
+                </template>
+                <el-button class="ml-1" type="success" @click="submitUpload">上传文件</el-button>
+                <template #tip>
+                    <div class="el-upload__tip text-red">只能上传一份文件，新文件会替换旧文件(限制png、jpg、jpeg、pdf)</div>
+                </template>
+            </el-upload>
+        </el-dialog>
+
     </div>
+
+
 </template>
 
 <script lang="ts" setup>
@@ -40,8 +95,11 @@ import type Node from 'element-plus/es/components/tree/src/model/node'
 import { reactive, ref } from 'vue'
 import { ElMessage, ElMessageBox, genFileId } from 'element-plus'
 
+import type { UploadRequestHandler } from 'element-plus'
+
 interface Tree {
     name: string
+    id?: number | undefined; // 唯一ID
     cid?: string | undefined // 一级 ID
     gid?: string | undefined // 二级 ID
     leaf?: boolean
@@ -56,6 +114,7 @@ const props = {
     isLeaf: 'leaf',     //  层级
 }
 
+const nodeLevel = ref<number | null>(null)
 
 /**
  *      懒加载  --  加载数据  只执行一次  tree 树
@@ -125,17 +184,19 @@ const handleNodeClick = (data: Tree, node: Node) => {
         api.tunnelList().then(res => {
             if (res.data.status === 200) {
                 content.list = res.data.result
+
+                //   全局层级赋值
+                nodeLevel.value = 1
             } else {
                 //  数据为空的时候
                 content.list = []
+                //   全局层级赋值
+                nodeLevel.value = null
             }
         }).catch(err => {
             console.log(err);
         })
     }
-
-
-
 
     //  二级表
     if (node.level === 2) {
@@ -145,9 +206,14 @@ const handleNodeClick = (data: Tree, node: Node) => {
             api.tunnelListChild(data.cid).then(res => {
                 if (res.data.status === 200) {
                     content.list = res.data.result
+
+                    //   全局层级赋值
+                    nodeLevel.value = 2
                 } else {
                     //  数据为空的时候
                     content.list = []
+                    //   全局层级赋值
+                    nodeLevel.value = null
                 }
             }).catch(err => {
                 console.log(err);
@@ -163,9 +229,14 @@ const handleNodeClick = (data: Tree, node: Node) => {
             api.tunnelListGrandChild(data.gid).then(res => {
                 if (res.data.status === 200) {
                     content.list = res.data.result
+
+                    //   全局层级赋值
+                    nodeLevel.value = 3
                 } else {
                     //  数据为空的时候
                     content.list = []
+                    //   全局层级赋值
+                    nodeLevel.value = null
                 }
             }).catch(err => {
                 console.log(err);
@@ -176,73 +247,101 @@ const handleNodeClick = (data: Tree, node: Node) => {
 
 
 /**
- *          预览 事件
- */
-
-function PreviewHandler(row: Tree) {
-    console.log(row);
-
-}
-
-/**
  *          文件上传   el组件参数
  * 
- *              on-change (文件状态改变时的钩子)：
-                    1.只要用户选了文件、或者文件上传成功/失败了，它都会被喊出来。
-                    2.用它来感知用户选好了文件，然后配合你存好的 row.id 去调 API。
-
-                before-upload (上传文件之前的钩子)：
-                    1.在文件还没发给后端之前，检查文件大不大（比如超过 10MB 不让传）、
-                    格式对不对（只能传图片）。如果这个函数返回 false，上传直接取消。
-
-                auto-upload (是否自动上传)：默认为 true（选完立刻发请求）。
-                    1.要手动调自己的 api.tunnelUpload，所以你必须把它设为 false，
-                    否则它会绕过你的逻辑去调 action 里的地址。
-
-                http-request (覆盖默认上传行为)：
-                    自定义请求
-
-                action (必选参数，上传的地址)：
-                    如果 http-request 或者完全手动控制，可以随便填个 # 占位。
-
-                limit (允许上传的最大数量)：l
-                    每次只能选x张图，选多了它会报错（触发 on-exceed）。
-
-                show-file-list (是否显示文件列表)：
-                    按钮下面要不要列出你刚才选的文件名。
-            
-                disabled (是否禁用)：
-
+ *             
  */
+//  定义 唯一 ID  --  1. 数据库查找  2.传参(上传按钮事件传给el-upload)
+const fileID = ref<number>(0)
+
+//  定义 对话框的初始状态
+const dialogUploadVisible = ref<boolean>(false)
+
+// 关闭对话框之前
+const handleClose = (done: () => void) => {
+    ElMessageBox.confirm('文件未上传，确定关闭对话框?')
+        .then(() => {
+            done()
+        })
+        .catch(() => {
+            // catch error
+        })
+}
+
 //  定义文件  初始化
 const fileList = ref<UploadUserFile[]>([]);
 
+/** 
+ *          上传按钮  触发对话框来上传
+ *              这里的 row 可以拿到所有信息
+*/
+
+//  唯一 id 赋值
+//  级别 赋值
 function UploadHandler(row: Tree) {
+    dialogUploadVisible.value = true
+    if (row.id) {
+        fileID.value = row.id
+    }
+
     console.log(row);
 
 }
 
+/** 
+ *      上传文件之前( 文件类型校验 )  --  before-upload 
+ *          jgp jpeg png pdf   最大为10MB
+*/
+
+const beforeUpload: UploadProps['beforeUpload'] = (rawFile) => {
+    // 获取后缀名并转小写
+    const fileName = rawFile.name.toLowerCase();
+    const extension = fileName.substring(fileName.lastIndexOf('.'));
+
+    // 定义允许的后缀列表
+    const allowedExtensions = ['.jpg', '.jpeg', '.png', '.pdf'];
+
+    // 判断逻辑
+    if (!allowedExtensions.includes(extension)) {
+        ElMessage.error('不是规定类型文件（仅支持 jpg/jpeg/png/pdf）！');
+        // 返回 false 会自动触发移除动作
+        return false;
+    }
+
+    if (rawFile.size / 1024 / 1024 > 10) {
+        ElMessage.error('文件不能超过10MB！');
+        return false;
+    }
+
+    return true;
+}
 
 /**
  *      移除文件前 的提示
 */
 
-const beforeRemove: UploadProps['beforeRemove'] = (uploadFile, uploadFiles) => {
-    return ElMessageBox.confirm(
-        `取消撤销${uploadFile.name} 文件吗?`
-    ).then(
-        () => true,
-        () => false
-    )
-}
+// const beforeRemove: UploadProps['beforeRemove'] = (uploadFile, uploadFiles) => {
+//     return ElMessageBox.confirm(
+//         `撤销${uploadFile.name} 文件吗?`
+//     ).then(
+//         () => true,
+//         () => false
+//     )
+// }
 
 /**
- *      
+ *      移除文件 事件
 */
 
-const handleRemove: UploadProps['onRemove'] = (file, uploadFiles) => {
-    console.log(file, uploadFiles)
-}
+// const handleRemove: UploadProps['onRemove'] = (file, uploadFiles) => {
+//     console.log(file, uploadFiles)
+//     return ElMessageBox.confirm(
+//         `撤销 ${file.name} 文件?`
+//     ).then(
+//         () => true,
+//         () => false
+//     )
+// }
 
 
 /**
@@ -254,13 +353,73 @@ const handlePreview: UploadProps['onPreview'] = (uploadFile) => {
 
 
 /**
- * 
+ *          文件覆盖
+ *              设置 limit 和 on-exceed 可以在选中时自动替换上一个文件
 */
+const upload = ref<UploadInstance>()
 const handleExceed: UploadProps['onExceed'] = (files, uploadFiles) => {
-    ElMessage.warning(
-        `只能上传一件文件，你同时选择了 ${files.length} 文件`
-    )
+    upload.value!.clearFiles()
+    const file = files[0] as UploadRawFile
+    file.uid = genFileId()
+    upload.value!.handleStart(file)
 }
+
+
+/**
+ *          提交上传 点击按钮之后会做 before-upload 检测  检测完毕之后触发该按钮事件
+ */
+
+const submitUpload = () => {
+    upload.value!.submit()
+
+    console.log("上传")
+}
+
+
+/**
+ *          提交 操作  http-request 拦截网络 自定义上传
+ *              1.  唯一ID  在点击上传按钮的时候 scope.row 有
+ *              2.  判断层级  点击左侧才会显示右侧 所以左侧点击判断层级 然后赋值给全局
+ *              3.  文件  自定义http-request 有 options 里有 文件
+ *                  逻辑 就是 用户必定点击左侧才能显示右侧  左侧用来判断层级右侧用来获取id 上传用来做请求
+ */
+const uploadFileAction: UploadRequestHandler = (options: any) => {
+    console.log(options);
+    const { file } = options;
+
+    let uploadType = "";
+    if (nodeLevel.value === 2) {
+        uploadType = 'child';
+    } else if (nodeLevel.value === 3) {
+        uploadType = 'grand';
+    }
+    return api.tunnelUpload(fileID.value, uploadType, file.name).then(res => {
+        if (res.data.status === 200) {
+            ElMessage.success("上传成功");
+            dialogUploadVisible.value = false;
+
+            //  加一个刷新列表 操作
+
+        }
+        return res;
+    })
+        .catch(err => {
+            ElMessage.error("上传失败，请检查后端服务");
+            //  抛出错误
+            throw err; 
+        })
+}
+
+/**
+ *          预览 事件
+ */
+
+function PreviewHandler(row: Tree) {
+
+    console.log(row);
+
+}
+
 
 
 /**
@@ -279,6 +438,8 @@ const handleExceed: UploadProps['onExceed'] = (files, uploadFiles) => {
  *              
  * 
 */
+
+
 </script>
 <style scoped lang="scss">
 .tunnelDesign {
@@ -317,8 +478,13 @@ const handleExceed: UploadProps['onExceed'] = (files, uploadFiles) => {
         .upload-demo {
             display: inline-block;
             padding-left: 5px;
+
         }
     }
 
+}
+
+:deep(.ml-1) {
+    margin-left: 20px
 }
 </style>

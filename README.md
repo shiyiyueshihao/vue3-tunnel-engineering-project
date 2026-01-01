@@ -12,11 +12,15 @@
 7.  UI组件库：element-plus  --  npm install --save element-puls
   7.1 按需加载组件安装(别忘了配置vite.config.ts)  --  npm install -D unplugin-vue-components unplugin-auto-import
   7.2 icons  --  npm install @element-plus/icons-vue  --  独立的包 再哪里使用 哪里引入 不用全局
-8.  typescript  --  自带
-9.  sass
-10. 富文本编辑器  TinyMCE
+
+8.  网络请求
+    8.1 封装
+      8.1.1   --    状态码  /  请求拦截   /   响应拦截   
+9.  typescript  --  自带
+10.  sass
+11. 富文本编辑器  TinyMCE
         npm install tinymce@6.2.0 @tinymce/tinymce-vue@5.0.0
-11. 文件上传
+12. 文件上传
         需要安装 multer 库来解析文件数据 
             npm install multer
 
@@ -62,9 +66,7 @@
           6.1.1 安装依赖  --  npm install --save jsonwebtoken
           6.1.2 jsonwebtoken 还需要一个密钥，所以我们还得创建一个额外的文件夹
 
-7.  网络请求
-    7.1 封装
-      7.1.1   --    状态码  /  请求拦截   /   响应拦截   
+
 
 
   

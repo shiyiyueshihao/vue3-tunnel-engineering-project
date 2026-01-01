@@ -69,4 +69,5 @@ body,
 .is-current .el-tree-node__content .el-tree-node__label{
   color: blue;
 }
+
 </style>
