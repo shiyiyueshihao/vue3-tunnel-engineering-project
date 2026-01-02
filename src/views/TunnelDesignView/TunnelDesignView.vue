@@ -11,7 +11,12 @@
                 <el-table-column prop="drawing_no" label="图号" header-align="center" />
                 <el-table-column prop="leader" label="负责人" header-align="center" />
                 <el-table-column prop="status" label="状态" header-align="center" />
-                <el-table-column prop="progress" label="施工进度" header-align="center" />
+                <el-table-column prop="progress" label="施工进度" header-align="center" >
+                    <!-- tem + def + sco 那数据 -->
+                    <template #default="scope">
+                        <el-progress :text-inside="true" :stroke-width="26" :percentage="scope.row.progress" />
+                    </template>
+                </el-table-column>
                 <el-table-column prop="content" label="内容" header-align="center" show-overflow-tooltip />
                 <el-table-column fixed="right" label="编辑" header-align="center" align="center" width="180">
                     <!-- 用 scope 那当前行的数据 -->
@@ -70,8 +75,8 @@
              -->
 
             <el-upload ref="upload" class="upload-demo" action="#" :limit="1" :show-file-list="true"
-                :before-upload="beforeUpload" :auto-upload="false" :on-preview="handlePreview"
-                :on-change="handleChange" :on-exceed="handleExceed" >
+                :before-upload="beforeUpload" :auto-upload="false" :on-preview="handlePreview" :on-change="handleChange"
+                :on-exceed="handleExceed">
                 <!-- 文件上传  需要 在 网络请求中做类型判断并不能格式化不然文件会出错(后端拿不到数据) -->
                 <template #trigger>
                     <el-button type="primary">选择文件</el-button>
@@ -324,11 +329,11 @@ const handlePreview: UploadProps['onPreview'] = (uploadFile) => {
 */
 
 const handleChange: UploadProps['onChange'] = (uploadFile, uploadFiles) => {
-  console.log(uploadFile);
-  
-  uploadFileInfo.value = uploadFile.raw
+    console.log(uploadFile);
+
+    uploadFileInfo.value = uploadFile.raw
 }
- 
+
 
 /**
  *          文件覆盖
@@ -360,25 +365,25 @@ const submitUpload = async () => { // 1. 必须使用 async
     if (!uploadFileInfo.value) {
         return ElMessage.error('请先选择文件！');
     }
-    
+
     try {
         // 2. 核心：调用 API 并传入参数
         console.log("准备发送请求：", { id: fileID.value, type: nodeType, file: uploadFileInfo.value });
-        
+
         const res = await api.tunnelUpload(fileID.value, nodeType, uploadFileInfo.value);
 
         // 3. 处理后端返回的结果
         if (res.data.status === 200) {
             ElMessage.success('上传成功！');
-            // 2查看后端返回的具体字段（根据你后端的逻辑）
+            // 查看后端返回的具体字段（根据你后端的逻辑）
             console.log("文件存储路径：", res.data.url); // 对应后端的 filePath
             console.log("成功消息：", res.data.msg);    // 对应后端的 '上传成功并关联至...'
-            
+
             // 4. 上传成功后的清理工作
             dialogUploadVisible.value = false; // 关闭对话框
             uploadFileInfo.value = null;       // 清空临时文件变量
             upload.value!.clearFiles();         // 清除 el-upload 组件界面的显示
-            
+
             // 建议：此处可以调用一次列表刷新函数，让用户看到最新的数据状态
         } else {
             ElMessage.error(res.data.msg || '服务器返回错误');
@@ -394,7 +399,15 @@ const submitUpload = async () => { // 1. 必须使用 async
 
 /**
  *          预览 事件
+ *              主
+ *                  1.  显示 pdf 还是 图片  等 ，怎么显示 的问题
+ *                  2.  如果分开显示 要后端返回文件类型    pdf 用 iframe
+ *              次
+ *                  2.  重新写个预览接口  --  拿到数据 显示预览按钮
  */
+
+// 控制 预览 是否显示
+const controlPreviewIsShow = ref<boolean>(false)
 
 function PreviewHandler(row: Tree) {
 
