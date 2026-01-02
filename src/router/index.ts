@@ -11,6 +11,22 @@ import api from '@/api'
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
+    //  登录页页面
+    {
+      path: '/login',
+      name: 'login',
+      component: Login
+    },
+    //  文件预览页面
+    {
+      path: '/filePrewview',
+      name: 'filePrewview',
+      component: () => import('../views/FilePreviewView/FilePreviewView.vue'),
+      meta: {
+        requireLogin: true,
+        key: "文件预览"
+      }
+    },
     {
       path: '/',
       name: 'layout',
@@ -42,7 +58,7 @@ const router = createRouter({
           meta: {
             requireLogin: true,
             key: "隧道设计信息"
-          },
+          }
         },
         //  工作监督管理  动态路由 权限  --  独立写一个文件 加载路由页面
         {
@@ -102,11 +118,6 @@ const router = createRouter({
           },
         }
       ]
-    },
-    {
-      path: '/login',
-      name: 'login',
-      component: Login
     },
   ],
 })

@@ -1,28 +1,31 @@
 <template>
     <div class="tunnelDesign">
+
         <div class="tree-container">
             <p>选择断面</p>
             <el-tree :props="props" :load="loadNode" lazy @node-click="handleNodeClick" />
         </div>
+
         <div class="content-container" style="width: 100%;">
             <el-table :data="content.list" stripe>
-                <el-table-column prop="name" label="隧道名称" header-align="center" width="180" />
-                <el-table-column prop="drawing_name" label="圈名" header-align="center" />
-                <el-table-column prop="drawing_no" label="图号" header-align="center" />
-                <el-table-column prop="leader" label="负责人" header-align="center" />
-                <el-table-column prop="status" label="状态" header-align="center" />
-                <el-table-column prop="progress" label="施工进度" header-align="center" >
+                <el-table-column prop="name" label="隧道名称" align="center" width="180" />
+                <el-table-column prop="drawing_name" label="圈名" align="center" />
+                <el-table-column prop="drawing_no" label="图号" align="center" />
+                <el-table-column prop="leader" label="负责人" align="center" />
+                <el-table-column prop="status" label="状态" align="center" />
+                <el-table-column prop="progress" label="施工进度" align="center">
                     <!-- tem + def + sco 那数据 -->
                     <template #default="scope">
-                        <el-progress :text-inside="true" :stroke-width="26" :percentage="scope.row.progress" />
+                        <el-progress :text-inside="true" :stroke-width="20" :percentage="scope.row.progress" />
                     </template>
                 </el-table-column>
-                <el-table-column prop="content" label="内容" header-align="center" show-overflow-tooltip />
-                <el-table-column fixed="right" label="编辑" header-align="center" align="center" width="180">
+                <el-table-column prop="content" label="内容" align="center" show-overflow-tooltip />
+                <el-table-column fixed="right" label="编辑" align="center" width="180">
                     <!-- 用 scope 那当前行的数据 -->
                     <template #default="scope">
                         <div class="operation-wrapper">
-                            <el-button type="primary" size="small" @click="PreviewHandler(scope.row)">预览</el-button>
+                            <el-button type="primary" size="small" @click="PreviewHandler(scope.row)"
+                                v-show="scope.row.file_url">预览</el-button>
                             <el-button type="primary" size="small" @click="UploadHandler(scope.row)">上传</el-button>
                         </div>
                     </template>
@@ -32,7 +35,6 @@
 
         <!-- 弹出对话框 然后再 上传文件 -->
         <el-dialog v-model="dialogUploadVisible" title="文件上传" width="500" align="center">
-
             <!--  upload  使用说明 细则
     
                         on-change (文件状态改变时的钩子)：
@@ -73,7 +75,6 @@
 
                         disabled (是否禁用)： 
              -->
-
             <el-upload ref="upload" class="upload-demo" action="#" :limit="1" :show-file-list="true"
                 :before-upload="beforeUpload" :auto-upload="false" :on-preview="handlePreview" :on-change="handleChange"
                 :on-exceed="handleExceed">
@@ -90,18 +91,17 @@
 
     </div>
 
-
 </template>
 
 <script lang="ts" setup>
 import api from '@/api'
-import type { LoadFunction, UploadProps, UploadUserFile, UploadInstance, UploadRawFile } from 'element-plus'
+import type { LoadFunction, UploadProps, UploadInstance, UploadRawFile } from 'element-plus'
 //  引入  tree 的 node 的 Node 约束类型  防止调用 level 报错
 import type Node from 'element-plus/es/components/tree/src/model/node'
 import { reactive, ref } from 'vue'
-import { ElMessage, ElMessageBox, genFileId } from 'element-plus'
+import { ElMessage, genFileId } from 'element-plus'
 
-import type { UploadRequestHandler } from 'element-plus'
+
 
 interface Tree {
     name: string
@@ -109,6 +109,7 @@ interface Tree {
     cid?: string | undefined // 一级 ID
     gid?: string | undefined // 二级 ID
     leaf?: boolean
+    file_url?: string | null
 }
 
 interface dataTree {
@@ -120,6 +121,7 @@ const props = {
     isLeaf: 'leaf',     //  层级
 }
 
+//      全局层级 存储 
 const nodeLevel = ref<number | null>(null)
 
 /**
@@ -180,12 +182,25 @@ const content: dataTree = reactive({
     list: []
 })
 
+const nodeInfo = ref()
+
 // @node-click 有三个参数   1. data(数据)   2.node(判断层级)  3.self(实例对象)
 const handleNodeClick = (data: Tree, node: Node) => {
-    // console.log(data)
-    // console.log(node.level);
+    console.log(data)
+    console.log("node为:", node);
 
-    if (node.level === 1) {
+    console.log(node.level);
+    nodeInfo.value = node
+    loadRightTable(data, node.level)
+
+}
+
+/**
+ *          封装一下 点击列表加载右侧数据 table 的函数
+ *              参数  1.  Tree  信息     2.   level 评级
+ */
+function loadRightTable(data: Tree, level: number) {
+    if (level === 1) {
         console.log("1级");
         api.tunnelList().then(res => {
             if (res.data.status === 200) {
@@ -205,7 +220,7 @@ const handleNodeClick = (data: Tree, node: Node) => {
     }
 
     //  二级表
-    if (node.level === 2) {
+    if (level === 2) {
         console.log("2级");
         //  ts 约束类型  要存在 cid 才可调用接口
         if (data.cid) {
@@ -228,7 +243,7 @@ const handleNodeClick = (data: Tree, node: Node) => {
     }
 
     //  三级表
-    if (node.level === 3) {
+    if (level === 3) {
         console.log("3级");
         //  ts 约束类型  要存在 gid 才可调用接口
         if (data.gid) {
@@ -251,7 +266,6 @@ const handleNodeClick = (data: Tree, node: Node) => {
     }
 }
 
-
 /**
  *          文件上传   el组件参数
  * 
@@ -269,8 +283,10 @@ const uploadFileInfo = ref()
 /** 
  *          上传按钮  触发对话框来上传
  *              这里的 row 可以拿到所有信息
+ *              所有信息都可以在这里拿取   
 */
-
+//  存储内容 做无感刷新用
+const currentRowData = ref<Tree | null>(null) 
 //  唯一 id 赋值
 //  级别 赋值
 function UploadHandler(row: Tree) {
@@ -278,7 +294,7 @@ function UploadHandler(row: Tree) {
     if (row.id) {
         fileID.value = row.id
     }
-
+    currentRowData.value = row // 把这一行的数据完整存下来
     console.log(row);
 
 }
@@ -314,10 +330,12 @@ const beforeUpload: UploadProps['beforeUpload'] = (rawFile) => {
 
 
 /**
- *              预览   123456789
+ *              预览
+ *                  上传文件 对话框 列表里的文件 点击事件
 */
 const handlePreview: UploadProps['onPreview'] = (uploadFile) => {
-    console.log(uploadFile)
+
+    console.log("已经加载好准备上传的文件", uploadFile)
 
 }
 
@@ -352,6 +370,7 @@ const handleExceed: UploadProps['onExceed'] = (files, uploadFiles) => {
  *          提交上传 点击按钮之后会做 before-upload 检测  检测完毕之后触发该按钮事件
  */
 
+// 这里的data 就是 scope.row 
 const submitUpload = async () => { // 1. 必须使用 async
 
     let nodeType = ""
@@ -379,12 +398,17 @@ const submitUpload = async () => { // 1. 必须使用 async
             console.log("文件存储路径：", res.data.url); // 对应后端的 filePath
             console.log("成功消息：", res.data.msg);    // 对应后端的 '上传成功并关联至...'
 
+            // 无感刷新
+            console.log("数据为", currentRowData.value, "nodeInfo为", nodeInfo.value);
+            if (currentRowData.value && nodeInfo.value) {
+                handleNodeClick(currentRowData.value, nodeInfo.value)
+            }   
+
             // 4. 上传成功后的清理工作
             dialogUploadVisible.value = false; // 关闭对话框
             uploadFileInfo.value = null;       // 清空临时文件变量
             upload.value!.clearFiles();         // 清除 el-upload 组件界面的显示
 
-            // 建议：此处可以调用一次列表刷新函数，让用户看到最新的数据状态
         } else {
             ElMessage.error(res.data.msg || '服务器返回错误');
         }
@@ -398,7 +422,7 @@ const submitUpload = async () => { // 1. 必须使用 async
 
 
 /**
- *          预览 事件
+ *          预览 事件  --  点击触发路由跳转 push 跳转
  *              主
  *                  1.  显示 pdf 还是 图片  等 ，怎么显示 的问题
  *                  2.  如果分开显示 要后端返回文件类型    pdf 用 iframe
@@ -406,10 +430,21 @@ const submitUpload = async () => { // 1. 必须使用 async
  *                  2.  重新写个预览接口  --  拿到数据 显示预览按钮
  */
 
-// 控制 预览 是否显示
-const controlPreviewIsShow = ref<boolean>(false)
+import router from '@/router'
 
 function PreviewHandler(row: Tree) {
+
+    router.push({
+        name: "filePrewview",
+        // params: {
+        //     fileSrc: fileSrc.value
+        // },
+        // 如果你使用 params 传参，必须在 router/index.ts 的 path 中定义占位符（例如 path: 'filePewview/:fileSrc' ），否则刷新页面参数会丢失。
+        // 更推荐使用 query，因为它就像 URL 里的搜索参数（?fileSrc=xxx），不需要额外配置路由表，且刷新页面参数依然存在。
+        query: {
+            fileSrc: row.file_url
+        }
+    })
 
     console.log(row);
 
@@ -420,7 +455,7 @@ function PreviewHandler(row: Tree) {
 /**
  *          文件上传   
  *              1.  需要写参数   1.唯一id  2.类型(判断2级还是3级)   3.文件(类型限制)
- *              2.  静态资源访问 需要切割url
+ *              2.  静态资源访问 
  * 
  *              gemini 3 建议
  *                  1.  Tree 节点的视觉反馈： 既然你打算自己完成前端，可以尝试在 Tree 的 label 旁边
@@ -431,7 +466,6 @@ function PreviewHandler(row: Tree) {
  *        
  * 
  *         
- * 预览 没写   --  搜 123456789
  * 
  * 
 */
