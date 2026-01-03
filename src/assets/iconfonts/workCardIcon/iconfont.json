@@ -1,0 +1,37 @@
+{
+  "id": "",
+  "name": "",
+  "font_family": "iconfont",
+  "css_prefix_text": "icon-",
+  "description": "",
+  "glyphs": [
+    {
+      "icon_id": "11962482",
+      "name": "三角感叹号",
+      "font_class": "sanjiaogantanhao",
+      "unicode": "e666",
+      "unicode_decimal": 58982
+    },
+    {
+      "icon_id": "27741563",
+      "name": "时间异常",
+      "font_class": "shijianyichang",
+      "unicode": "e798",
+      "unicode_decimal": 59288
+    },
+    {
+      "icon_id": "32455965",
+      "name": "已完成事件",
+      "font_class": "yiwanchengshijian",
+      "unicode": "e606",
+      "unicode_decimal": 58886
+    },
+    {
+      "icon_id": "33820903",
+      "name": "业务_合格",
+      "font_class": "yewu_hege",
+      "unicode": "e685",
+      "unicode_decimal": 59013
+    }
+  ]
+}
