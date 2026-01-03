@@ -35,38 +35,6 @@ onMounted(() => {
     initChina();
 });
 
-//  定义本地数据过滤函数
-const filterLocalData = (name: string) => {
-    try {
-        const geoData: any = topojson.feature(
-            provinceData as any, 
-            (provinceData as any).objects.default
-        );
-        // 查找对应省份
-        const feature = geoData.features.find((f: any) => 
-            name.includes(f.properties.name) || f.properties.name.includes(name)
-        );
-        if (feature) {
-            return { type: "FeatureCollection", features: [feature] };
-        }
-    } catch (e) {
-        console.error('本地数据转换失败', e);
-    }
-    return null;
-};
-
-// 抽取渲染逻辑
-const renderMap = (name: string, data: any, isGeo = false) => {
-    const geoData = isGeo ? data : topojson.feature(data, data.objects.default);
-    const cityData = geoData.features.map((f: any) => ({
-        name: f.properties.name,
-        value: Math.floor(Math.random() * 100)
-    }));
-    if (myChart) myChart.dispose();
-    myChart = proxy.$dynamicMap('echarts-chinaMap', name, geoData, cityData);
-    isProvince.value = true;
-};
-
 const goProvince = async (name: string, code: string) => {
     try {
         // 1. 优先尝试从 API 获取数据
@@ -106,63 +74,7 @@ const renderMapFromData = (name: string, data: any, isGeoJSON: boolean) => {
     isProvince.value = true;
 };
 
-// // 辅助函数：通过省份名匹配 code
-
-// const getProvinceCode = (name: string) => {
-//   // 建议在初始化全国地图时，把省份名和 code 的映射关系存起来
-//   // 这里做一个简单的映射示例
-//   const provinceList = [
-//     { name: '江西省', code: '360000' },
-//     { name: '青海省', code: '630000' },
-//     // ... 其他省份
-//   ];
-//   const target = provinceList.find(p => name.includes(p.name) || p.name.includes(name));
-//   return target ? target.code : null;
-// };
-
-
 import * as topojson from 'topojson-client'; // 引入转换工具
-
-// const filterProvinceJSON = (name: string) => {
-//     try {
-//         const geoData: any = topojson.feature(
-//             provinceData as any, 
-//             (provinceData as any).objects.default
-//         );
-
-//         // 1. Find the parent province first to get the code prefix
-//         const province = geoData.features.find((f: any) => {
-//             const jsonName = f.properties.name || "";
-//             return name.includes(jsonName) || jsonName.includes(name.replace('省', '').replace('自治区', ''));
-//         });
-
-//         if (province && province.properties.code) {
-//             // Usually, the first 2 digits of the code represent the province
-//             const provincePrefix = province.properties.code.toString().substring(0, 2);
-
-//             // 2. Filter all cities that start with those same 2 digits
-//             const cityFeatures = geoData.features.filter((f: any) => {
-//                 const code = f.properties.code ? f.properties.code.toString() : "";
-//                 // Match the prefix but ensure it's not the exact same code as the province 
-//                 // (to avoid overlapping the whole province outline with city pieces)
-//                 return code.startsWith(provincePrefix) && code !== province.properties.code.toString();
-//             });
-
-//             // 3. If we found cities, return them; otherwise, fallback to the province outline
-//             return {
-//                 type: "FeatureCollection",
-//                 features: cityFeatures.length > 0 ? cityFeatures : [province]
-//             };
-//         } else {
-//             console.error('未在 JSON 中找到该省份或 code 缺失：', name);
-//             return null;
-//         }
-//     } catch (e) {
-//         console.error('转换失败', e);
-//         return null;
-//     }
-// };
-
 
 // 初始化：展示全国地图
 // 初始化全国地图
