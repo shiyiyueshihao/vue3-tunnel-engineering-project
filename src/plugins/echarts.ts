@@ -247,10 +247,14 @@ export default {
         // 2. 必须包含此配置以确保有视觉映射
         visualMap: {
           type: "piecewise",
-         
           show: true,
           left: 'left',
           bottom: '10%'
+        },
+        itemStyle: {
+          borderColor: '#fff', // 白色边框能把重合的边界“切”开
+          borderWidth: 1.5,
+          areaColor: '#f5f5f5'
         },
         series: [{
           type: 'map',
