@@ -28,7 +28,16 @@ export default {
           text: '近一周工程产值'
         },
         tooltip: {
-          trigger: 'axis'
+          trigger: 'axis',
+          // 这里给 params 指定 any 类型，或者 echarts.DefaultLabelFormatterCallbackParams
+          formatter: function (params: any) {
+            let res = params[0].name + '<br/>';
+            // 这里给 item 指定 any 类型
+            params.forEach((item: any) => {
+              res += item.marker + item.seriesName + '：' + item.value + ' 万元<br/>';
+            });
+            return res;
+          }
         },
         legend: {
           data: ['一期工程', '二期工程', '三期工程'],
@@ -54,7 +63,11 @@ export default {
           data: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
         },
         yAxis: {
-          type: 'value'
+          type: 'value',
+          name: '单位：万元', // 在这里添加单位
+          nameTextStyle: {
+            padding: [0, 0, 0, -30] // 调整位置，防止被遮挡
+          }
         },
         series: data
       }
