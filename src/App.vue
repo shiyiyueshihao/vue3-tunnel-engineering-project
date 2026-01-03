@@ -70,4 +70,13 @@ body,
   color: blue;
 }
 
+/* el-card 卡片 的边框 */
+.el-card{
+  border-radius: 10px !important;
+}
+/* 内部实现 flex 布局 垂直居中 */
+.el-card .el-card__body{
+  display: flex;
+  align-items: center;
+}
 </style>
