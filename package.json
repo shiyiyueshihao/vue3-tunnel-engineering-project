@@ -30,6 +30,7 @@
     "querystring": "^0.2.1",
     "sass": "^1.96.0",
     "tinymce": "^6.2.0",
+    "topojson-client": "^3.1.0",
     "vue": "^3.5.25",
     "vue-i18n": "^12.0.0-alpha.3",
     "vue-router": "^4.6.3"
@@ -37,6 +38,7 @@
   "devDependencies": {
     "@tsconfig/node24": "^24.0.3",
     "@types/node": "^24.10.1",
+    "@types/topojson-client": "^3.1.5",
     "@vitejs/plugin-vue": "^6.0.2",
     "@vue/tsconfig": "^0.8.1",
     "npm-run-all2": "^8.0.4",

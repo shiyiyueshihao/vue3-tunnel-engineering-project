@@ -214,7 +214,7 @@ export default {
           zoom: 1.2, //  默认地图的倍数
           label: {
             show: true,
-            fontSize: 10,      //  字体大小
+            fontSize: 13,      //  字体大小
           },
           itemStyle: {
             areaColor: "rgba(255,255,255,1)",
@@ -235,5 +235,48 @@ export default {
       myChart.setOption(option)
       return myChart
     }
+
+    //  注册一个全局可用的 $dynamicMap 方法  --  动态渲染地图
+    app.config.globalProperties.$dynamicMap = (elementId: string, mapName: string, mapData: any, data: any[] = []) => {
+      let myChart = echarts.init(document.getElementById(elementId));
+
+      // 1. 注册地图
+      echarts.registerMap(mapName, mapData as any);
+
+      myChart.setOption({
+        // 2. 必须包含此配置以确保有视觉映射
+        visualMap: {
+          type: "piecewise",
+         
+          show: true,
+          left: 'left',
+          bottom: '10%'
+        },
+        series: [{
+          type: 'map',
+          map: mapName,
+          roam: true, // 确保这个设为 true 解决你刚才提到的缩放问题
+          label: {
+            show: true,
+            // 【修改这里】
+            fontSize: 16,        // 字体大小，默认通常是 10 或 12
+            color: '#333',       // 字体颜色
+          },
+          emphasis: {
+            label: {
+              show: true,
+              fontSize: 20,      // 鼠标悬浮在城市上时，字体变得更大
+              color: '#000'
+            }
+          },
+          data: data
+        }]
+      });
+
+      // 3. 响应式处理
+      window.addEventListener('resize', () => myChart.resize());
+
+      return myChart;
+    };
   }
 };
