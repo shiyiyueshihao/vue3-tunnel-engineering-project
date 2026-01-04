@@ -144,7 +144,39 @@ const api = {
 
         // 3. 使用 POST 请求发送
         return axios.post(base.baseURL + base.tunnelUpload, formData);
-    }
+    },
+    /**
+     *          工作监督管理 查询总条数
+     */
+    supervisionTotalCount() {
+        return axios.get(base.baseURL + base.supervisionTotalCount)
+    },
+    /**
+     *      工作监督管理 分页查询
+     *      @param page  当前页码  --  默认倒序   
+    */
+    supervisionList(page: number) {
+        return axios.get(base.baseURL + base.supervisionList, {
+            params: {
+                page: page
+            }
+        })
+    },
+    /**
+     *      工作监督管理 ：组合筛选 + 全局模糊查询
+     *      @param bd  第一个下拉框内容(可不填)  
+     *      @param fx   第二个下拉框内容(可不填)   
+     *      @param content  第三个输入框内容(全局模糊查询)   
+    */
+    supervisionSearch(bd: string | undefined, fx: string | undefined, content: any) {
+        return axios.get(base.baseURL + base.supervisionList, {
+            params: {
+                location: bd,      // 对应数据库中的 location 字段
+                risk: fx,          // 对应数据库中的 status 字段 (风险等级)
+                search: content    // 对应后端逻辑中的全局搜索关键词
+            }
+        })
+    },
 
 }
 
