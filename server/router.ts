@@ -502,6 +502,125 @@ router.post('/upload', verifyToken, (req: Request, res: Response) => {
 });
 
 
+/**
+ *          工作监督管理查询 总数
+ */
+// 接口：查询监督任务的总条数
+router.get('/supervision/totalCount', verifyToken, (req, res) => {
+    // 1. 定义 SQL 语句
+    const sql = 'SELECT COUNT(*) as total FROM supervision_tasks';
+
+    // 2. 执行 SQL
+    SQLConnect(sql, (err, results) => {
+        // 3. 处理错误
+        if (err) {
+            return res.send({
+                status: 500,
+                message: '查询失败',
+                error: err.message
+            });
+        }
+
+        // 4. 返回查询到的条数
+        // results[0].total 对应 SQL 里的 as total
+        res.send({
+            status: 200,
+            message: '获取成功数据条数成功',
+            total: results[0].total
+        });
+    });
+});
+
+
+/**
+ *      工作监督管理分页查询
+ *          路由: /api/supervision/list?page=1
+ */
+router.get("/supervision/list", verifyToken, (req, res) => {
+    // 1. 获取当前页码，默认为第 1 页
+    const page = parseInt(url.parse(req.url, true).query.page as string) || 1;
+    const pageSize = 8; // 设定每页 8 条
+    const offset = (page - 1) * pageSize;
+
+    // 2. 编写 SQL 语句
+    // 根据图片中的表名 supervision_tasks，按 id 倒序排列
+    const sql = "SELECT * FROM supervision_tasks ORDER BY id DESC LIMIT ? OFFSET ?";
+
+    SQLConnect(sql, [pageSize, offset], result => {
+        if (result && result.length > 0) {
+            res.send({
+                status: 200,
+                result,
+                pagination: {
+                    currentPage: page,
+                    pageSize: pageSize
+                }
+            });
+        } else {
+            res.send({
+                status: 200, // 或者是 500 根据你的业务逻辑，通常空数据也返回200
+                result: [],
+                msg: "暂无更多数据"
+            });
+        }
+    });
+});
+
+
+
+/**
+ * 工作监督管理 ：组合筛选 + 全局模糊查询
+ */
+router.get("/supervision/search", verifyToken, (req, res) => {
+    const query = url.parse(req.url, true).query;
+    const location = query.location || ""; // 1. 标段
+    const risk = query.risk || "";         // 2. 风险等级
+    const search = query.search || "";     // 3. 任意值（模糊搜索）
+
+    // 基础 SQL (1=1 方便后续拼接 AND)
+    let sql = "SELECT * FROM supervision_tasks WHERE 1=1";
+    const params = [];
+
+    // --- A. 筛选：如果有标段 ---
+    if (location) {
+        sql += " AND location LIKE ?";
+        params.push(`%${location}%`);
+    }
+
+    // --- B. 筛选：如果有风险等级 ---
+    if (risk) {
+        sql += " AND status = ?";
+        params.push(risk);
+    }
+
+    // --- C. 模糊搜索：搜索所有相关字段 ---
+    if (search) {
+        // 使用括号将 OR 逻辑包起来，确保它作为一个整体与前面的 AND 配合
+        sql += " AND (task_no LIKE ? OR responsible_unit LIKE ? OR supervision_type LIKE ? OR location LIKE ? OR status LIKE ?)";
+        const keyword = `%${search}%`;
+        // 为上面的 5 个问号填充同一个关键词
+        params.push(keyword, keyword, keyword, keyword, keyword);
+    }
+
+    // 排序
+    sql += " ORDER BY id DESC";
+
+    SQLConnect(sql, params, result => {
+        if (result && result.length > 0) {
+            res.send({
+                status: 200,
+                result
+            });
+        } else {
+            res.send({
+                status: 200,
+                result: [],
+                msg: "未找到匹配数据"
+            });
+        }
+    });
+});
+
 //  导出 router 让外部可以访问
 // module.exports = router
 export default router //      --   ts写法
