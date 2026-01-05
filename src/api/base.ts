@@ -23,6 +23,8 @@ const base = {
     supervisionTotalCount:"/api/supervision/totalCount",//  工作监督管理 查询总条数
     supervisionList:"/api/supervision/list",           //          工作监督管理分页查询
     supervisionSearch:"/api/supervision/search",//          工作监督管理 ：组合筛选 + 全局模糊查询
+    supervisionSections:"/api/supervision/sections",//     工作监督管理 ：动态获取 所有标段
+    supervisionStatus:"/api/supervision/status", //           工作监督管理 ：动态获取 所有状态
 }
 
 export default base
