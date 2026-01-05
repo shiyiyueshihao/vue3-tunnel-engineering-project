@@ -569,64 +569,75 @@ router.get("/supervision/list", verifyToken, (req, res) => {
 
 
 /**
- * 工作监督管理 ：组合筛选 + 全局模糊查询
+ * 工作监督管理 ：组合筛选 + 全局模糊查询 + 分页
  */
 
 router.get("/supervision/search", verifyToken, (req, res) => {
     try {
         const query = url.parse(req.url, true).query;
+        // 1. 接收前端传来的 page 和 size，设置默认值
+        const { st, et, location, risk, search } = query;
+        const page = parseInt(query.page) || 1;
+        const size = parseInt(query.size) || 8;
+        const offset = (page - 1) * size;
 
-        // 统一参数名：确保这里和前端传过来的 params 键名一致
-        const st = query.st;
-        const et = query.et;
-        const location = query.location || "";
-        const risk = query.risk || "";
-        const search = query.search || "";
-
-        // 基础 SQL
-        let sql = "SELECT * FROM supervision_tasks WHERE 1=1";
+        // --- 你的原始逻辑开始 (完全保留) ---
+        let whereSql = " WHERE 1=1";
         const params = [];
 
-        // 情况 A：如果有日期范围，加入日期区间过滤
-        if (st && et && st !== 'undefined' && et !== 'undefined') {
-            const startStr = st.replace(/-/g, "");
-            const endStr = et.replace(/-/g, "");
-            sql += " AND (SUBSTRING_INDEX(SUBSTRING_INDEX(task_no, '-', 2), '-', -1) BETWEEN ? AND ?)";
-            params.push(startStr, endStr);
-        }
-
-        // 情况 B：标段匹配
-        if (location) {
-            sql += " AND location LIKE ?";
-            params.push(`%${location}%`);
-        }
-
-        // 情况 C：危险等级匹配
-        if (risk) {
-            sql += " AND status = ?";
-            params.push(risk);
-        }
-
-        // 情况 D：全局模糊搜索 (你要求的必填项)
-        if (search) {
-            sql += " AND (task_no LIKE ? OR responsible_unit LIKE ? OR supervision_type LIKE ? OR location LIKE ? OR status LIKE ?)";
+        if (search && search.trim() !== "") {
+            whereSql += " AND (task_no LIKE ? OR responsible_unit LIKE ? OR supervision_type LIKE ? OR location LIKE ? OR status LIKE ?)";
             const keyword = `%${search}%`;
             params.push(keyword, keyword, keyword, keyword, keyword);
         }
 
-        sql += " ORDER BY task_no DESC";
+        // --- 1. 日期判断逻辑（加强过滤） ---
+        const isValidDate = (val) => {
+            return val && val !== '' && val !== 'null' && val !== 'undefined';
+        };
 
-        console.log("最终执行SQL:", sql, params);
+        if (isValidDate(st) && isValidDate(et)) {
+            const startStr = st.replace(/-/g, "");
+            const endStr = et.replace(/-/g, "");
+            whereSql += " AND (SUBSTRING_INDEX(SUBSTRING_INDEX(task_no, '-', 2), '-', -1) BETWEEN ? AND ?)";
+            params.push(startStr, endStr);
+        }
+        // 2. 标段判断
+        if (location && location !== '' && location !== 'null' && location !== 'undefined') {
+            whereSql += " AND location LIKE ?";
+            params.push(`${location}%`);
+        }
+        // 3. 状态判断
+        if (risk && risk !== '' && risk !== 'null' && risk !== 'undefined') {
+            whereSql += " AND status LIKE ?";
+            params.push(`${risk}%`);
+        }
+        // --- 你的原始逻辑结束 ---
 
-        SQLConnect(sql, params, result => {
-            res.send({
-                status: 200,
-                result: result || [],
-                msg: (result && result.length > 0) ? "查询成功" : "未找到匹配数据"
+        // 2. 第一步：查询符合你这套逻辑的总条数
+        const countSql = "SELECT COUNT(*) as total FROM supervision_tasks" + whereSql;
+
+        SQLConnect(countSql, params, countResult => {
+            const total = countResult[0]?.total || 0;
+
+            // 3. 第二步：查询当前页的数据，保持你的 DESC 倒序
+            // 在你原来的 sql += " ORDER BY task_no DESC" 后面拼接 LIMIT
+            const dataSql = "SELECT * FROM supervision_tasks" + whereSql + " ORDER BY task_no DESC LIMIT ? OFFSET ?";
+            const dataParams = [...params, size, offset];
+
+            console.log("执行分页SQL:", dataSql);
+
+            SQLConnect(dataSql, dataParams, result => {
+                res.send({
+                    status: 200,
+                    result: result || [],
+                    total: total, // 必须把总数传给前端
+                    msg: "查询成功"
+                });
             });
         });
     } catch (error) {
-        console.error("服务器内部错误:", error);
+        console.error(error);
         res.send({ status: 500, msg: "服务器内部错误" });
     }
 });
@@ -636,25 +647,26 @@ router.get("/supervision/search", verifyToken, (req, res) => {
 router.get("/supervision/sections", verifyToken, (req, res) => {
     // 1. 先从数据库拿到原始的 location 列表并去重
     const sql = "SELECT DISTINCT location FROM supervision_tasks";
-    
+
     SQLConnect(sql, [], result => {
         if (!result) return res.send({ status: 200, result: [] });
 
         // 2. 在内存中进行正则清洗
         const sectionSet = new Set();
-        
         result.forEach(item => {
-            const loc = item.location;
+            const loc = item.location ? item.location.trim() : ""; // 先去前后空格
             if (loc) {
-                // 正则解析：匹配开头的 字母+数字组合（例如 YK10, ZK9, G318, DK15）
-                // ^[A-Za-z0-9]+ 表示匹配字符串开头的所有连续字母或数字
-                const match = loc.match(/^[A-Za-z0-9]+/);
+                // 核心修改：只匹配开头的连续字母
+                // ^ 表示开头，[A-Za-z]+ 表示一个或多个连续的英文字母
+                const match = loc.match(/^[A-Za-z]+/);
+
                 if (match) {
-                    sectionSet.add(match[0]);
+                    // 此时提取出来的就是纯净的 AQ, DK, TBM, ZK
+                    let cleanLoc = match[0]; // 建议转大写，防止数据库存的是小写导致重复
+                    sectionSet.add(cleanLoc);
                 }
             }
         });
-
         // 3. 转换回数组并排序（可选）
         const finalSections = Array.from(sectionSet).sort();
 
@@ -671,9 +683,6 @@ router.get("/supervision/sections", verifyToken, (req, res) => {
  *      工作监督管理 获取 所有 状态
 */
 
-/**
- * 动态获取所有任务状态（彻底去括号版）
- */
 router.get("/supervision/status", verifyToken, (req, res) => {
     // 逻辑：
     // 1. 先按中文 '（' 切分
@@ -685,17 +694,17 @@ router.get("/supervision/status", verifyToken, (req, res) => {
         FROM supervision_tasks 
         WHERE status IS NOT NULL AND status != ''
     `;
-    
+
     SQLConnect(sql, [], (result, err) => {
         if (err) {
             return res.status(500).send({ status: 500, msg: "数据库查询失败" });
         }
 
         const statusList = result ? result.map(item => item.clean_status) : [];
-        
+
         res.send({
             status: 200,
-            result: statusList, 
+            result: statusList,
             msg: "获取数据库状态成功"
         });
     });

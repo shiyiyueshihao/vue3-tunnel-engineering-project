@@ -23,24 +23,24 @@
             <div class="top-container" style="display: flex; gap: 20px;text-align: center;">
                 <!-- 时间选择器 -->
                 <el-date-picker class="demo-datetime-picker" style="flex: 4;" v-model="value1" type="daterange"
-                    range-separator="至" />
+                    range-separator="-" start-placeholder="开始时间" end-placeholder="结束时间" />
                 <div style="flex: 2; display: flex;">
                     <div style="width: 50px; font-size: 15px; height: 32px; line-height: 32px; margin-right: 10px;">标段
                     </div>
                     <el-select-v2 v-model="value2" :options="sectionOptions1"
-                        :placeholder="sectionOptions1[0]?.label || '请选择标段'" />
+                        :placeholder="sectionOptions1[0]?.label || '请选择标段'" clearable />
                 </div>
                 <div style="flex: 2;">
-                    <el-select-v2 v-model="value3" :options="sectionOptions2" placeholder="状态" />
+                    <el-select-v2 v-model="value3" :options="sectionOptions2" placeholder="状态" clearable />
                 </div>
                 <div style="flex: 2;">
                     <el-input v-model="input" placeholder="请输入内容" clearable />
                 </div>
                 <div style="flex: 1;">
-                    <el-button type="primary">查询</el-button>
+                    <el-button type="primary" @click="searchInfo">查询</el-button>
                 </div>
                 <div style="flex: 2;">
-                    <el-button type="primary" style="">下达整改通知单</el-button>
+                    <el-button type="primary">下达整改通知单</el-button>
                 </div>
                 <div style="flex: 2;">
                     <el-button style="">发起现场巡检</el-button>
@@ -119,15 +119,12 @@ const cardData = reactive({
  *          定义 时间默认起始   
  *              时间 参数  value1
 */
-const value1 = ref<[Date, Date]>([
-    //  +1 
-    new Date(2026, 0, 1),
-    new Date(2026, 0, 10),
-])
+// 建议修改为 null，而不是 ["", ""]
+const value1 = ref<[Date, Date] | null>(null);
 
-//  定义起始 的初始化时间参数
-const startTime = ref()
-const endTime = ref()
+// 定义起始时间变量，初始值给空字符串或 undefined
+const startTime = ref<string>("");
+const endTime = ref<string>("");
 /**
  *          拿到的是
  *               {0: Thu Jan 01 2026 00:00:00 GMT+0800 (中国标准时间), 
@@ -138,6 +135,12 @@ import { dataFormater } from '@/utils/utils.ts'
 console.log(value1.value);
 
 function DataFormaterHandler(va: any) {
+    // 增加判断：如果 va.value 为空，直接清空时间并返回，不要读取 [0]
+    if (!va.value || va.value.length < 2) {
+        startTime.value = "";
+        endTime.value = "";
+        return;
+    }
     //  用函数处理一下拿结果  --  先出处理默认的结果
     startTime.value = dataFormater(undefined, undefined, va.value[0], undefined)
     endTime.value = dataFormater(undefined, undefined, va.value[1], undefined)
@@ -222,6 +225,7 @@ api.supervisionStatus().then(res => {
 const input = ref('')
 
 
+
 /**
  *          定义表格数据
 */
@@ -244,49 +248,8 @@ interface tableDataType {
 const tableData: tableDataType = reactive({
     list: []
 })
-// const tableData = [
-//     {
-//         date: '2016-05-03',
-//         name: 'Tom',
-//         address: 'No. 189, Grove St',
-//     },
-//     {
-//         date: '2016-05-02',
-//         name: 'Tom',
-//         address: 'No. 189, Grove St',
-//     },
-//     {
-//         date: '2016-05-04',
-//         name: 'Tom',
-//         address: 'No. 189, Grove Sf',
-//     },
-//     {
-//         date: '2016-05-01',
-//         name: 'Tom',
-//         address: 'No. 189, Grove St',
-//     },
-//     {
-//         date: '2016-05-01',
-//         name: 'Tom',
-//         address: 'No. 189, Grove St',
-//     },
-//     {
-//         date: '2016-05-01',
-//         name: 'Tom',
-//         address: 'No. 189, Grove St',
-//     },
-//     {
-//         date: '2016-05-01',
-//         name: 'Tom',
-//         address: 'No. 189, Grove St',
-//     },
-//     {
-//         date: '2016-05-01',
-//         name: 'Tom',
-//         address: 'No. 189, Grove St',
-//     },
-// ]
 
+//  获取 数据总条数
 const totalCount = ref<number | undefined>(0)
 onMounted(() => {
     api.supervisionTotalCount().then(res => {
@@ -297,6 +260,7 @@ onMounted(() => {
         }
     })
 
+    //  页面加载 初始化 一次 表格
     api.supervisionList(1).then(res => {
         if (res.data.status === 200) {
             console.log(res.data.result);
@@ -313,7 +277,7 @@ onMounted(() => {
  *          分页
  */
 
-import type { ComponentSize } from 'element-plus'
+import { ElMessage, type ComponentSize } from 'element-plus'
 
 const currentPage3 = ref(1)
 
@@ -329,6 +293,7 @@ const handleSizeChange = (val: number) => {
 }
 const handleCurrentChange = (val: number) => {
     console.log(val)
+    //  分页查询
     api.supervisionList(val).then(res => {
         if (res.data.status === 200) {
             console.log(res.data.result);
@@ -340,6 +305,66 @@ const handleCurrentChange = (val: number) => {
     })
 }
 
+
+/**
+ *          查询按钮点击事件
+ *              startTime    开始时间
+ *              endTime     结束时间
+ *              value2         标段
+ *              value3         状态
+ *              input           输入框内容
+*/
+function searchInfo() {
+
+    // 1. 提取核心判断条件 (过滤掉 null, undefined, 和空字符串)
+    const hasTime = startTime.value && startTime.value !== 'undefined' && startTime.value !== '';
+    const hasSection = value2.value !== null && value2.value !== undefined && value2.value !== '';
+    const hasStatus = value3.value !== null && value3.value !== undefined && value3.value !== '';
+    const hasInput = input.value && input.value.trim() !== '';
+
+    // 如果全是空的，直接拦截，不发请求
+    if (!hasTime && !hasSection && !hasStatus && !hasInput) {
+        ElMessage({
+            message: '请选择或输入查询条件', // 提示语建议改为这个，更符合语境
+            type: 'warning',
+        });
+        return;
+    }
+    api.supervisionSearch(startTime.value, endTime.value, value2.value, value3.value, input.value).then(res => {
+        if (res.data.status === 200) {
+            console.log(value2.value);
+            //  有数据
+            if (res.data.result && res.data.result.length > 0) {
+                console.log(res.data.result);
+                tableData.list = res.data.result
+
+                //  做分页查询 无感刷新
+
+                ElMessage({
+                    message: '查询成功',
+                    type: 'success',
+                })
+            } else {
+                tableData.list = []
+                ElMessage({
+                    message: '数据为空',
+                    type: 'warning',
+                })
+            }
+        }
+
+    }).catch(err => {
+        console.log(err);
+        ElMessage({
+            message: '请输入有效信息',
+            type: 'warning',
+        })
+    })
+}
+
+
+
+
 </script>
 
 <style scoped lang="scss">
@@ -349,22 +374,16 @@ const handleCurrentChange = (val: number) => {
 // 定义卡片 通用  灵活  混合 样式
 @mixin status-card($name, $border-clolr, $iconfont-color, $brfore-bgcolor) {
     .card-#{$name} {
-        // border-left: 8px solid $border-clolr;
         border-left: 0.42vw solid $border-clolr;
-        // box-sizing: border-box;
 
         // el-card__body  display:flex  才能让内部实现flex布局
         .#{$name}-iconfont {
-            // margin-left: 10px;
-            // height: 80px;
-            // line-height: 80px;
             margin-left: 0.5vw;
             height: 4.17vw;
             line-height: 4.17vw;
             box-sizing: border-box;
 
             .iconfont {
-                // font-size: 80px;
                 font-size: 4.17vw;
                 color: $iconfont-color;
 
@@ -377,14 +396,10 @@ const handleCurrentChange = (val: number) => {
         }
 
         .#{$name}-content {
-            // margin-left: 30px;
             margin-left: 1.56vw;
             box-sizing: border-box;
 
             .text {
-                // font-size: 20px;
-                // height: 20px;
-                // line-height: 20px;
                 font-size: 1.1vw;
                 height: 1.1vw;
                 line-height: 1.1vw;
@@ -392,12 +407,6 @@ const handleCurrentChange = (val: number) => {
             }
 
             .num {
-                // padding-top: 10px;
-                // height: 40px;
-                // line-height: 40px;
-                // font-size: 40px;
-                // font-weight: 700;
-                // padding-bottom: 10px;
                 padding-top: 0.5vw;
                 height: 2.1vw;
                 line-height: 2.1vw;
@@ -438,57 +447,6 @@ const handleCurrentChange = (val: number) => {
         @include status-card("red", #DE4C50, #EC605A, #FBE6E5);
         //  绿色卡片
         @include status-card("green", #47B180, #34B77E, #E2F6EA);
-
-        // .card-blue {
-        //     border-left: 8px solid #3C88E0;
-        //     box-sizing: border-box;
-
-        //     // el-card__body  display:flex  才能让内部实现flex布局
-        //     .blue-iconfont {
-        //         height: 108px;
-        //         line-height: 108px;
-
-        //         .iconfont {
-        //             font-size: 50px;
-        //             color: #388AF6;
-
-        //             &::before {
-        //                 border-radius: 50%;
-        //                 background-color: #DEECFC;
-        //             }
-        //         }
-
-        //     }
-
-        //     .blue-content {
-        //         margin-left: 15px;
-        //         box-sizing: border-box;
-
-        //         .text {
-        //             text-align: center;
-        //             font-size: 20px;
-        //             height: 20px;
-        //             line-height: 20px;
-        //             font-weight: 700;
-        //         }
-
-        //         .number {
-        //             padding-top: 10px;
-        //             height: 40px;
-        //             line-height: 40px;
-        //             font-size: 40px;
-        //             font-weight: 700;
-        //             padding-bottom: 10px;
-
-        //         }
-
-        //         .remark {
-        //             color: gray;
-        //             font-size: 16px;
-        //         }
-        //     }
-
-        // }
 
 
     }
