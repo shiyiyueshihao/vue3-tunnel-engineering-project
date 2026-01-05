@@ -171,7 +171,7 @@ const api = {
      *      @param content  第五个输入框内容(全局模糊查询 必填)   
     */
     supervisionSearch(st: string | undefined, et: string | undefined, bd: string | undefined, fx: string | undefined, content: any) {
-        return axios.get(base.baseURL + base.supervisionList, {
+        return axios.get(base.baseURL + base.supervisionSearch, {
             params: {
                 st: st,       // 对应后端 query.st
                 et: et,    // 后端代码里接收的是 query.et
