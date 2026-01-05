@@ -23,14 +23,15 @@
             <div class="top-container" style="display: flex; gap: 20px;text-align: center;">
                 <!-- 时间选择器 -->
                 <el-date-picker class="demo-datetime-picker" style="flex: 4;" v-model="value1" type="daterange"
-                    range-separator="至" start-placeholder="开始时间" end-placeholder="结束时间" />
+                    range-separator="至" />
                 <div style="flex: 2; display: flex;">
                     <div style="width: 50px; font-size: 15px; height: 32px; line-height: 32px; margin-right: 10px;">标段
                     </div>
-                    <el-select-v2 v-model="value2" :options="sectionOptions1" placeholder="YK10标段" />
+                    <el-select-v2 v-model="value2" :options="sectionOptions1"
+                        :placeholder="sectionOptions1[0]?.label || '请选择标段'" />
                 </div>
                 <div style="flex: 2;">
-                    <el-select-v2 v-model="value3" :options="sectionOptions2" placeholder="风险等级" />
+                    <el-select-v2 v-model="value3" :options="sectionOptions2" placeholder="状态" />
                 </div>
                 <div style="flex: 2;">
                     <el-input v-model="input" placeholder="请输入内容" clearable />
@@ -60,7 +61,7 @@
                     <el-table-column prop="responsible_unit" label="责任单位" show-overflow-tooltip />
                     <el-table-column prop="status" label="当前状态" />
                     <el-table-column prop="update_time" label="更新时间" />
-                    <el-table-column prop="report_url" label="操作" >
+                    <el-table-column prop="report_url" label="操作">
                         <!-- 做有无路径的渲染 -->
                     </el-table-column>
                 </el-table>
@@ -74,7 +75,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue';
+import { ref, reactive, onMounted, watch, computed } from 'vue';
 import api from '@/api/index.ts'
 /**
  *          定义 卡牌内容 方便渲染数据
@@ -115,80 +116,107 @@ const cardData = reactive({
 
 
 /**
- *          定义 时间默认起始
+ *          定义 时间默认起始   
+ *              时间 参数  value1
 */
 const value1 = ref<[Date, Date]>([
     //  +1 
-    new Date(2000, 9, 1),
-    new Date(2000, 9, 30),
+    new Date(2026, 0, 1),
+    new Date(2026, 0, 10),
 ])
+
+//  定义起始 的初始化时间参数
+const startTime = ref()
+const endTime = ref()
+/**
+ *          拿到的是
+ *               {0: Thu Jan 01 2026 00:00:00 GMT+0800 (中国标准时间), 
+ *               1: Sat Jan 10 2026 00:00:00 GMT+0800 (中国标准时间)}
+ *          正好我们封装了一下这个时间处理的文件 拿来用
+ */
+import { dataFormater } from '@/utils/utils.ts'
+console.log(value1.value);
+
+function DataFormaterHandler(va: any) {
+    //  用函数处理一下拿结果  --  先出处理默认的结果
+    startTime.value = dataFormater(undefined, undefined, va.value[0], undefined)
+    endTime.value = dataFormater(undefined, undefined, va.value[1], undefined)
+    //  2026-1-1     2026-1-10
+    console.log("起始时间", startTime.value, "结束时间", endTime.value);
+}
+
+DataFormaterHandler(value1)
+
+//  监听 时间  变化  
+watch(value1, (newValue, oldValue) => {
+    console.log("起始时间 新", newValue);
+    //  变化  再次调用
+    DataFormaterHandler(value1)
+})
 
 /**
  *          定义选择器1
+ *              标段
  */
 
 const value2 = ref()
 // 模拟后端返回的数据
 const rawSections = reactive({
-    list: [
-        {
-            id: 1,
-            name: "YK10标段",
-        },
-        {
-            id: 2,
-            name: "YK11标段",
-        },
-        {
-            id: 3,
-            name: "YK12标段",
-        }
-    ]
+    list: [] as string[]
 })
 
-// 使用 map 转换
-const sectionOptions1 = rawSections.list.map(item => ({
-    label: item.name,
-    value: item.id
-}));
+
+// 用 computed 监测 用 map 转换
+const sectionOptions1 = computed(() => {
+    return rawSections.list.map(item => ({
+        label: item + " 标段",
+        value: item
+    }));
+})
+
+//  获取所有标段
+api.supervisionSections().then(res => {
+    if (res.data.status === 200) {
+        console.log("所有标段为：", res.data);
+        rawSections.list = res.data.result
+    }
+}).catch(err => {
+    console.log(err);
+})
 
 
 /**
  *          定义选择器2
+ *              状态
  */
 const value3 = ref()
 
 //  定义风险等级
 const dangerLevel = reactive({
-    list: [
-        {
-            name: "全部等级",
-            value: ""
-        },
-        {
-            name: "高风险",
-            value: "hight"
-        },
-        {
-            name: "中风险",
-            value: "medium"
-        },
-        {
-            name: "低风险",
-            value: "low"
-        },
-    ]
+    list: [] as string[]
 })
 
 // 使用 map 转换
-const sectionOptions2 = dangerLevel.list.map(item => ({
-    label: item.name,
-    value: item.value
-}));
+const sectionOptions2 = computed(() => {
+    return dangerLevel.list.map(item => ({
+        label: item,
+        value: item
+    }));
+})
+//  获取所有状态
+api.supervisionStatus().then(res => {
+    if (res.data.status === 200) {
+        console.log("所有状态为：", res.data);
+        dangerLevel.list = res.data.result
+    }
+}).catch(err => {
+    console.log(err);
+})
 
 
 /**
  *          定义 输入框
+ *              输入框
 */
 
 const input = ref('')

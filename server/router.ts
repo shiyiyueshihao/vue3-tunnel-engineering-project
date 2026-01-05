@@ -571,56 +571,135 @@ router.get("/supervision/list", verifyToken, (req, res) => {
 /**
  * 工作监督管理 ：组合筛选 + 全局模糊查询
  */
+
 router.get("/supervision/search", verifyToken, (req, res) => {
-    const query = url.parse(req.url, true).query;
-    const location = query.location || ""; // 1. 标段
-    const risk = query.risk || "";         // 2. 风险等级
-    const search = query.search || "";     // 3. 任意值（模糊搜索）
+    try {
+        const query = url.parse(req.url, true).query;
 
-    // 基础 SQL (1=1 方便后续拼接 AND)
-    let sql = "SELECT * FROM supervision_tasks WHERE 1=1";
-    const params = [];
+        // 统一参数名：确保这里和前端传过来的 params 键名一致
+        const st = query.st;
+        const et = query.et;
+        const location = query.location || "";
+        const risk = query.risk || "";
+        const search = query.search || "";
 
-    // --- A. 筛选：如果有标段 ---
-    if (location) {
-        sql += " AND location LIKE ?";
-        params.push(`%${location}%`);
-    }
+        // 基础 SQL
+        let sql = "SELECT * FROM supervision_tasks WHERE 1=1";
+        const params = [];
 
-    // --- B. 筛选：如果有风险等级 ---
-    if (risk) {
-        sql += " AND status = ?";
-        params.push(risk);
-    }
-
-    // --- C. 模糊搜索：搜索所有相关字段 ---
-    if (search) {
-        // 使用括号将 OR 逻辑包起来，确保它作为一个整体与前面的 AND 配合
-        sql += " AND (task_no LIKE ? OR responsible_unit LIKE ? OR supervision_type LIKE ? OR location LIKE ? OR status LIKE ?)";
-        const keyword = `%${search}%`;
-        // 为上面的 5 个问号填充同一个关键词
-        params.push(keyword, keyword, keyword, keyword, keyword);
-    }
-
-    // 排序
-    sql += " ORDER BY id DESC";
-
-    SQLConnect(sql, params, result => {
-        if (result && result.length > 0) {
-            res.send({
-                status: 200,
-                result
-            });
-        } else {
-            res.send({
-                status: 200,
-                result: [],
-                msg: "未找到匹配数据"
-            });
+        // 情况 A：如果有日期范围，加入日期区间过滤
+        if (st && et && st !== 'undefined' && et !== 'undefined') {
+            const startStr = st.replace(/-/g, "");
+            const endStr = et.replace(/-/g, "");
+            sql += " AND (SUBSTRING_INDEX(SUBSTRING_INDEX(task_no, '-', 2), '-', -1) BETWEEN ? AND ?)";
+            params.push(startStr, endStr);
         }
-    });
+
+        // 情况 B：标段匹配
+        if (location) {
+            sql += " AND location LIKE ?";
+            params.push(`%${location}%`);
+        }
+
+        // 情况 C：危险等级匹配
+        if (risk) {
+            sql += " AND status = ?";
+            params.push(risk);
+        }
+
+        // 情况 D：全局模糊搜索 (你要求的必填项)
+        if (search) {
+            sql += " AND (task_no LIKE ? OR responsible_unit LIKE ? OR supervision_type LIKE ? OR location LIKE ? OR status LIKE ?)";
+            const keyword = `%${search}%`;
+            params.push(keyword, keyword, keyword, keyword, keyword);
+        }
+
+        sql += " ORDER BY task_no DESC";
+
+        console.log("最终执行SQL:", sql, params);
+
+        SQLConnect(sql, params, result => {
+            res.send({
+                status: 200,
+                result: result || [],
+                msg: (result && result.length > 0) ? "查询成功" : "未找到匹配数据"
+            });
+        });
+    } catch (error) {
+        console.error("服务器内部错误:", error);
+        res.send({ status: 500, msg: "服务器内部错误" });
+    }
 });
 
+/** * 动态获取所有标段（超级优化版：彻底去除变电站、路基位等后缀）
+ */
+router.get("/supervision/sections", verifyToken, (req, res) => {
+    // 1. 先从数据库拿到原始的 location 列表并去重
+    const sql = "SELECT DISTINCT location FROM supervision_tasks";
+    
+    SQLConnect(sql, [], result => {
+        if (!result) return res.send({ status: 200, result: [] });
+
+        // 2. 在内存中进行正则清洗
+        const sectionSet = new Set();
+        
+        result.forEach(item => {
+            const loc = item.location;
+            if (loc) {
+                // 正则解析：匹配开头的 字母+数字组合（例如 YK10, ZK9, G318, DK15）
+                // ^[A-Za-z0-9]+ 表示匹配字符串开头的所有连续字母或数字
+                const match = loc.match(/^[A-Za-z0-9]+/);
+                if (match) {
+                    sectionSet.add(match[0]);
+                }
+            }
+        });
+
+        // 3. 转换回数组并排序（可选）
+        const finalSections = Array.from(sectionSet).sort();
+
+        res.send({
+            status: 200,
+            result: finalSections, // 这里返回的就是纯净的 ['G318', 'YK10', 'ZK9'...]
+            msg: "标段列表清洗成功"
+        });
+    })
+});
+
+
+/**
+ *      工作监督管理 获取 所有 状态
+*/
+
+/**
+ * 动态获取所有任务状态（彻底去括号版）
+ */
+router.get("/supervision/status", verifyToken, (req, res) => {
+    // 逻辑：
+    // 1. 先按中文 '（' 切分
+    // 2. 再按英文 '(' 切分
+    // 3. 最后 TRIM 去掉可能存在的空格
+    const sql = `
+        SELECT DISTINCT 
+            TRIM(SUBSTRING_INDEX(SUBSTRING_INDEX(status, '（', 1), '(', 1)) AS clean_status 
+        FROM supervision_tasks 
+        WHERE status IS NOT NULL AND status != ''
+    `;
+    
+    SQLConnect(sql, [], (result, err) => {
+        if (err) {
+            return res.status(500).send({ status: 500, msg: "数据库查询失败" });
+        }
+
+        const statusList = result ? result.map(item => item.clean_status) : [];
+        
+        res.send({
+            status: 200,
+            result: statusList, 
+            msg: "获取数据库状态成功"
+        });
+    });
+});
 //  导出 router 让外部可以访问
 // module.exports = router
 export default router //      --   ts写法
