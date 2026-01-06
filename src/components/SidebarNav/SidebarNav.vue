@@ -5,15 +5,8 @@
         <div class="logo" v-if="ControlLogoStore.isShowLogo">
             {{ ControlMenuStore.isShow ? '隧道' : '隧道工程项目' }}
         </div>
-        <el-menu 
-            class="el-menu-vertical-demo" 
-            text-color="#fff" 
-            active-text-color="#ffd04b" 
-            background-color="#304156"
-            :default-active="routerPath" 
-            router 
-            :collapse="ControlMenuStore.isShow" 
-        >
+        <el-menu class="el-menu-vertical-demo" text-color="#fff" active-text-color="#fffd0b" background-color="#304156"
+            :default-active="routerPath" router :collapse="ControlMenuStore.isShow">
             <!-- 
             active-text-color  点击后的颜色
             router   路由位置参数(index 匹配路由path)
@@ -23,23 +16,24 @@
           -->
             <!-- 动态渲染 -->
 
-            <template v-for="(item,index) in ControlMenuStore.menus" :key="index" >
-                
+            <template v-for="(item, index) in ControlMenuStore.menus" :key="index">
+
                 <el-sub-menu v-if="item.children" :index="item.path">
                     <template #title>
                         <component :is="iconMap[item.icon]" class="icon"></component>
                         <span>{{ item.name }}</span>
                     </template>
-                    <el-menu-item :index="item.path+childrenItem.path"  v-for="(childrenItem,childrenIndex) in item.children" :key="childrenIndex" >
+                    <el-menu-item :index="item.path + childrenItem.path"
+                        v-for="(childrenItem, childrenIndex) in item.children" :key="childrenIndex">
                         <span>{{ childrenItem.name }}</span>
                     </el-menu-item>
                 </el-sub-menu>
-                
-                <el-menu-item  v-else :index="item.path">
+
+                <el-menu-item v-else :index="item.path">
                     <!-- <el-icon> <Flod /> </el-icon> -->
-                     <!-- 用 iconMap 和 解构 完成 组件渲染 -->
-                     <component :is="iconMap[item.icon]" class="icon"></component>
-                    <span> {{ item.name  }}</span>
+                    <!-- 用 iconMap 和 解构 完成 组件渲染 -->
+                    <component :is="iconMap[item.icon]" class="icon"></component>
+                    <span> {{ item.name }}</span>
                 </el-menu-item>
 
             </template>
@@ -100,9 +94,9 @@ if (ControlMenuStore.routerPath) {
         // transition: 300ms ease-in;
     }
 
-    .el-menu-vertical-demo{
+    .el-menu-vertical-demo {
 
-        .icon{
+        .icon {
             width: 16px;
             height: 16px;
             margin-right: 5px;
