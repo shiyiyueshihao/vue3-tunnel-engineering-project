@@ -594,7 +594,7 @@ function EditorProjectInfo(value: infoType) {
 */
 //  引入 类型 做校验
 import type { FormInstance } from 'element-plus';
-import { fa } from 'element-plus/es/locale/index.mjs';
+
 //  定义 校验 规则
 const rules = reactive({
     // 1. 项目名称：必填，文本校验

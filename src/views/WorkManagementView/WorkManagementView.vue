@@ -28,7 +28,7 @@
                     <div style="width: 50px; font-size: 15px; height: 32px; line-height: 32px; margin-right: 10px;">标段
                     </div>
                     <el-select-v2 v-model="value2" :options="sectionOptions1"
-                        :placeholder="sectionOptions1[0]?.label || '请选择标段'" clearable />
+                        placeholder=" 标段" clearable />
                 </div>
                 <div style="flex: 2;">
                     <el-select-v2 v-model="value3" :options="sectionOptions2" placeholder="状态" clearable />
@@ -38,6 +38,9 @@
                 </div>
                 <div style="flex: 1;">
                     <el-button type="primary" @click="searchInfo">查询</el-button>
+                </div>
+                <div style="flex: 1; position: relative;">
+                    <el-button type="warning" @click="resertInfo" style='position: absolute;left: 0;'>重置</el-button>
                 </div>
                 <div style="flex: 2;">
                     <el-button type="primary">下达整改通知单</el-button>
@@ -251,7 +254,9 @@ const tableData: tableDataType = reactive({
 
 //  获取 数据总条数
 const totalCount = ref<number | undefined>(0)
-onMounted(() => {
+
+//  初始数据渲染函数
+function initDataRander() {
     api.supervisionTotalCount().then(res => {
         if (res.data.status === 200) {
             console.log(res.data);
@@ -270,6 +275,12 @@ onMounted(() => {
     }).catch(err => {
         console.log(err);
     })
+}
+
+
+onMounted(() => {
+    //  初始数据渲染一下
+    initDataRander()
 })
 
 
@@ -324,21 +335,27 @@ function searchInfo() {
 
     // 如果全是空的，直接拦截，不发请求
     if (!hasTime && !hasSection && !hasStatus && !hasInput) {
+        //  初始数据渲染一下
+        initDataRander()
         ElMessage({
             message: '请选择或输入查询条件', // 提示语建议改为这个，更符合语境
             type: 'warning',
         });
         return;
     }
+    //  查询 请求 
     api.supervisionSearch(startTime.value, endTime.value, value2.value, value3.value, input.value).then(res => {
         if (res.data.status === 200) {
             console.log(value2.value);
             //  有数据
             if (res.data.result && res.data.result.length > 0) {
+                //  这个就是 查询之后的总长度
+                console.log(res.data.total);
+
+                totalCount.value = res.data.total
+
                 console.log(res.data.result);
                 tableData.list = res.data.result
-
-                //  做分页查询 无感刷新
 
                 ElMessage({
                     message: '查询成功',
@@ -363,6 +380,23 @@ function searchInfo() {
 }
 
 
+/** 
+ *      重置 按钮 事件
+*/
+
+function resertInfo() {
+
+    // 清空所有内同
+    startTime.value = ''
+    endTime.value = ''
+    value1.value =null
+    value2.value = ''
+    value3.value = ''
+    input.value = ''
+
+    //  初始数据渲染一下
+    initDataRander()
+}
 
 
 </script>
