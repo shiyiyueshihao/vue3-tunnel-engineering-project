@@ -27,8 +27,7 @@
                 <div style="flex: 2; display: flex;">
                     <div style="width: 50px; font-size: 15px; height: 32px; line-height: 32px; margin-right: 10px;">标段
                     </div>
-                    <el-select-v2 v-model="value2" :options="sectionOptions1"
-                        placeholder=" 标段" clearable />
+                    <el-select-v2 v-model="value2" :options="sectionOptions1" placeholder=" 标段" clearable />
                 </div>
                 <div style="flex: 2;">
                     <el-select-v2 v-model="value3" :options="sectionOptions2" placeholder="状态" clearable />
@@ -257,6 +256,7 @@ const totalCount = ref<number | undefined>(0)
 
 //  初始数据渲染函数
 function initDataRander() {
+    currentPage3.value = 1;
     api.supervisionTotalCount().then(res => {
         if (res.data.status === 200) {
             console.log(res.data);
@@ -302,18 +302,36 @@ const disabled = ref(false)
 const handleSizeChange = (val: number) => {
     console.log(`${val} items per page`)
 }
+/**
+ *              分页查询 点击事件 --  逻辑处理 
+ *                  搜索之后的分页逻辑 
+ *                  无搜索的分页逻辑
+ */
 const handleCurrentChange = (val: number) => {
-    console.log(val)
-    //  分页查询
-    api.supervisionList(val).then(res => {
-        if (res.data.status === 200) {
-            console.log(res.data.result);
+    currentPage3.value = val; // 更新当前页码
+    console.log("当前切换到第几页：", val);
 
-            tableData.list = res.data.result
-        }
-    }).catch(err => {
-        console.log(err);
-    })
+    // 只要 时间、标段、状态、搜索框 有任意一个不为空，就走搜索分页
+    const isSearching = (startTime.value && startTime.value !== 'undefined') || value2.value || value3.value || (input.value && input.value.trim() !== '');
+
+    if (isSearching) {
+        // 如果是在搜索结果中翻页
+        api.supervisionSearch(startTime.value, endTime.value, value2.value, value3.value, input.value, val).then(res => {
+            if (res.data.status === 200) {
+                tableData.list = res.data.result;
+                // 这里不需要更新 totalCount，因为搜索总数没变
+            }
+        });
+    } else {
+        // 普通状态下的翻页
+        api.supervisionList(val).then(res => {
+            if (res.data.status === 200) {
+                tableData.list = res.data.result;
+            }
+        }).catch(err => {
+            console.log(err);
+        });
+    }
 }
 
 
@@ -327,16 +345,18 @@ const handleCurrentChange = (val: number) => {
 */
 function searchInfo() {
 
+
     // 1. 提取核心判断条件 (过滤掉 null, undefined, 和空字符串)
     const hasTime = startTime.value && startTime.value !== 'undefined' && startTime.value !== '';
     const hasSection = value2.value !== null && value2.value !== undefined && value2.value !== '';
     const hasStatus = value3.value !== null && value3.value !== undefined && value3.value !== '';
     const hasInput = input.value && input.value.trim() !== '';
 
+    //  重置分页 为1
+    currentPage3.value = 1;
+
     // 如果全是空的，直接拦截，不发请求
     if (!hasTime && !hasSection && !hasStatus && !hasInput) {
-        //  初始数据渲染一下
-        initDataRander()
         ElMessage({
             message: '请选择或输入查询条件', // 提示语建议改为这个，更符合语境
             type: 'warning',
@@ -344,7 +364,8 @@ function searchInfo() {
         return;
     }
     //  查询 请求 
-    api.supervisionSearch(startTime.value, endTime.value, value2.value, value3.value, input.value).then(res => {
+    //  传入 分页页数  --  1 强制搜索到第一页的    --  每页大小  后端也定死了是8 前端也定死了是8
+    api.supervisionSearch(startTime.value, endTime.value, value2.value, value3.value, input.value, 1).then(res => {
         if (res.data.status === 200) {
             console.log(value2.value);
             //  有数据
@@ -363,6 +384,7 @@ function searchInfo() {
                 })
             } else {
                 tableData.list = []
+                totalCount.value = 0; // 没数据时总数归零
                 ElMessage({
                     message: '数据为空',
                     type: 'warning',
@@ -389,10 +411,13 @@ function resertInfo() {
     // 清空所有内同
     startTime.value = ''
     endTime.value = ''
-    value1.value =null
+    value1.value = null
     value2.value = ''
     value3.value = ''
     input.value = ''
+
+    // 重置当前页码
+    currentPage3.value = 1
 
     //  初始数据渲染一下
     initDataRander()
@@ -499,7 +524,6 @@ function resertInfo() {
         .top-container {
             width: 98%;
             margin: 0 auto;
-            margin-bottom: 0.5vw;
 
         }
 

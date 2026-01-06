@@ -169,15 +169,17 @@ const api = {
      *      @param bd  第三个下拉框内容(可不填)  
      *      @param fx   第四个下拉框内容(可不填)   
      *      @param content  第五个输入框内容(全局模糊查询 必填)   
+     *      @param page  页码数  分页查询  
     */
-    supervisionSearch(st: string | undefined, et: string | undefined, bd: string | undefined, fx: string | undefined, content: any) {
+    supervisionSearch(st: string | null | undefined, et: string | null | undefined, bd: string | null | undefined, fx: string | null | undefined, content: string, page: number) {
         return axios.get(base.baseURL + base.supervisionSearch, {
             params: {
-                st: st,       // 对应后端 query.st
-                et: et,    // 后端代码里接收的是 query.et
-                location: bd,      // 对应数据库中的 location 字段
-                risk: fx,          // 对应数据库中的 status 字段 (风险等级)
-                search: content    // 对应后端逻辑中的全局搜索关键词
+                st: st || '',       // 对应后端 query.st
+                et: et || '',    // 后端代码里接收的是 query.et
+                location: bd || '',      // 对应数据库中的 location 字段
+                risk: fx || '',          // 对应数据库中的 status 字段 (风险等级)
+                search: content || '',    // 对应后端逻辑中的全局搜索关键词,
+                page: page,             // 对应后端的page
             }
         })
     },

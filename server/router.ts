@@ -575,73 +575,58 @@ router.get("/supervision/list", verifyToken, (req, res) => {
 router.get("/supervision/search", verifyToken, (req, res) => {
     try {
         const query = url.parse(req.url, true).query;
-        // 1. 接收前端传来的 page 和 size，设置默认值
-        const { st, et, location, risk, search } = query;
-        const page = parseInt(query.page) || 1;
-        const size = parseInt(query.size) || 8;
-        const offset = (page - 1) * size;
+        // 1. 获取参数并过滤非法字符串
+        let { st, et, location, risk, search, page = 1 } = query;
+        const size = 8;
+        const offset = (parseInt(page) - 1) * size;
 
-        // --- 你的原始逻辑开始 (完全保留) ---
+        // 定义一个严谨的判断函数
+        const isLegal = (val) => val && val !== '' && val !== 'null' && val !== 'undefined';
+
         let whereSql = " WHERE 1=1";
         const params = [];
 
-        if (search && search.trim() !== "") {
+        // 2. 只有真正有值时才拼接 SQL
+        if (isLegal(search)) {
             whereSql += " AND (task_no LIKE ? OR responsible_unit LIKE ? OR supervision_type LIKE ? OR location LIKE ? OR status LIKE ?)";
-            const keyword = `%${search}%`;
-            params.push(keyword, keyword, keyword, keyword, keyword);
+            const kw = `%${search}%`;
+            params.push(kw, kw, kw, kw, kw);
         }
 
-        // --- 1. 日期判断逻辑（加强过滤） ---
-        const isValidDate = (val) => {
-            return val && val !== '' && val !== 'null' && val !== 'undefined';
-        };
-
-        if (isValidDate(st) && isValidDate(et)) {
+        if (isLegal(st) && isLegal(et)) {
             const startStr = st.replace(/-/g, "");
             const endStr = et.replace(/-/g, "");
             whereSql += " AND (SUBSTRING_INDEX(SUBSTRING_INDEX(task_no, '-', 2), '-', -1) BETWEEN ? AND ?)";
             params.push(startStr, endStr);
         }
-        // 2. 标段判断
-        if (location && location !== '' && location !== 'null' && location !== 'undefined') {
+
+        if (isLegal(location)) {
             whereSql += " AND location LIKE ?";
             params.push(`${location}%`);
         }
-        // 3. 状态判断
-        if (risk && risk !== '' && risk !== 'null' && risk !== 'undefined') {
-            whereSql += " AND status LIKE ?";
-            params.push(`${risk}%`);
+
+        // 重点优化：状态使用精确匹配 = ，防止“已销项”查出“待销项”
+        if (isLegal(risk)) {
+            whereSql += " AND status = ?"; 
+            params.push(risk);
         }
-        // --- 你的原始逻辑结束 ---
 
-        // 2. 第一步：查询符合你这套逻辑的总条数
+        // 3. 执行分页查询逻辑
         const countSql = "SELECT COUNT(*) as total FROM supervision_tasks" + whereSql;
+        SQLConnect(countSql, params, countRes => {
+            const total = countRes[0]?.total || 0;
+            const dataSql = `SELECT * FROM supervision_tasks ${whereSql} ORDER BY task_no DESC LIMIT ? OFFSET ?`;
+            
+            console.log("执行分页SQL:", dataSql, "参数:", [...params, size, offset]);
 
-        SQLConnect(countSql, params, countResult => {
-            const total = countResult[0]?.total || 0;
-
-            // 3. 第二步：查询当前页的数据，保持你的 DESC 倒序
-            // 在你原来的 sql += " ORDER BY task_no DESC" 后面拼接 LIMIT
-            const dataSql = "SELECT * FROM supervision_tasks" + whereSql + " ORDER BY task_no DESC LIMIT ? OFFSET ?";
-            const dataParams = [...params, size, offset];
-
-            console.log("执行分页SQL:", dataSql);
-
-            SQLConnect(dataSql, dataParams, result => {
-                res.send({
-                    status: 200,
-                    result: result || [],
-                    total: total, // 必须把总数传给前端
-                    msg: "查询成功"
-                });
+            SQLConnect(dataSql, [...params, size, offset], result => {
+                res.send({ status: 200, result, total, msg: "查询成功" });
             });
         });
     } catch (error) {
-        console.error(error);
-        res.send({ status: 500, msg: "服务器内部错误" });
+        res.send({ status: 500, msg: "服务器错误" });
     }
 });
-
 /** * 动态获取所有标段（超级优化版：彻底去除变电站、路基位等后缀）
  */
 router.get("/supervision/sections", verifyToken, (req, res) => {
