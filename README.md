@@ -23,6 +23,10 @@
 12. 文件上传
         需要安装 multer 库来解析文件数据 
             npm install multer
+13.路由跳转进度条
+        npm install --save nprogress
+        如果使用 TypeScript，建议安装类型定义
+        npm install --save-dev @types/nprogress
 
 
 ##  编辑功能，数据回显

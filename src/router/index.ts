@@ -8,6 +8,29 @@ import { useLoginStore } from '@/stores/loginStore'
 import { useControlMenuStore } from '@/stores/ControlMenuStore'
 import workManagementRoute from '@/router/dynamicRoute.ts'
 import api from '@/api'
+
+/**
+ *      路由跳转进度条
+ *          1.  安装 npm install --save nprogress  --save-dev @types/nprogress
+ *          2.  引入 nprogress 和 样式
+ *          3.  配置配置项(可选)
+ *          4.  路由全局前置导航守卫：开始进度条 
+ *          5.  路由全局后置导航守卫：结束进度条
+ *          6.  颜色配置 在App.vue 中写
+ */
+// 引入 nprogress
+import nprogress from 'nprogress'
+// 引入 nprogress 样式（必须引入，否则进度条不可见）
+import 'nprogress/nprogress.css'
+// 配置nprogress配置项（可选）
+nprogress.configure({ 
+    easing: 'ease',      // 动画方式 
+    speed: 500,          // 递增进度条的速度 
+    showSpinner: false,  // 是否显示右上角螺旋加载图标
+    trickleSpeed: 200,   // 自动递增间隔
+    minimum: 0.3         // 初始化时的最小百分比
+})
+
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
@@ -133,6 +156,9 @@ const notFoundRoute = {
 
 // 路由守卫
 router.beforeEach(async (to, from, next) => {
+  //  进度条开始
+  nprogress.start()
+
   const loginStore = useLoginStore()
   const controlMenuStore = useControlMenuStore()
 
@@ -189,6 +215,8 @@ router.afterEach((to, from) => {
   if (to.meta.key) {
     ControlMenuStore.breadcrumb = to.meta.key as string
   }
+  //  进度条结束
+  nprogress.done()
 })
 
 export default router
