@@ -62,21 +62,37 @@ body,
 }
 
 /*  针对Tree 树形控件 做 选中样式修改  --  选中框背景颜色 */
-.is-current .el-tree-node__content{
+.is-current .el-tree-node__content {
   background-color: antiquewhite !important;
 }
+
 /*  针对Tree 树形控件 做 选中样式修改  --  字体颜色 */
-.is-current .el-tree-node__content .el-tree-node__label{
+.is-current .el-tree-node__content .el-tree-node__label {
   color: blue;
 }
 
 /* el-card 卡片 的边框 */
-.el-card{
+.el-card {
   border-radius: 0.5vw !important;
 }
+
 /* 内部实现 flex 布局 垂直居中 */
-.el-card .el-card__body{
+.el-card .el-card__body {
   display: flex;
   align-items: center;
+}
+
+/* 全局 配置 nprogress 路由跳转进度条样式设置 */
+/* 修改进度条颜色 */
+#nprogress .bar {
+  background: #409EFF !important;
+  /* 这里换成你选中的那个蓝色 */
+  height: 3px !important;
+  /* 进度条高度 */
+}
+
+/* 修改进度条末端光晕颜色 */
+#nprogress .peg {
+  box-shadow: 0 0 10px #409EFF, 0 0 5px #409EFF !important;
 }
 </style>

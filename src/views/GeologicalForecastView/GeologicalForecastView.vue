@@ -11,6 +11,8 @@ import { getCurrentInstance, onMounted, ref } from 'vue';
 // import chinaMapData from '@/assets/json/MapJson/aliyun_chinaMap_100000_full.json';
 import provinceData from '@/assets/json/MapJson/ChineseProvince.json';
 
+import { ElLoading } from 'element-plus';
+
 // 1. 先定义映射表 (放在最上面)
 const getCodeByName = (name: string) => {
     const map: Record<string, string> = {
@@ -36,14 +38,21 @@ onMounted(() => {
 });
 
 const goProvince = async (name: string, code: string) => {
+    // 1. 启动 Loading
+    const loadingInstance = ElLoading.service({
+        lock: true,
+        text: `正在加载${name}地图...`,
+        background: 'rgba(0, 0, 0, 0.7)',
+    });
+
     try {
-        // 1. 优先尝试从 API 获取数据
+        // 2. 原有的 API 请求逻辑
         const response = await fetch(`https://geojson.cn/api/china/${code}.topo.json`);
         if (!response.ok) throw new Error('网络请求失败');
         const topoData = await response.json();
         renderMapFromData(name, topoData, false);
     } catch (e) {
-        // 2. 如果失败，尝试从你导入的本地 provinceData 过滤
+        // 3. 原有的兜底逻辑
         console.warn(`API 请求失败，正在为 ${name} 尝试本地兜底...`);
         const localData = filterLocalProvince(name);
         if (localData) {
@@ -51,6 +60,9 @@ const goProvince = async (name: string, code: string) => {
         } else {
             console.error('本地数据也不存在该省份');
         }
+    } finally {
+        // 4. 无论成功还是失败，关闭 Loading
+        loadingInstance.close();
     }
 };
 
