@@ -605,18 +605,15 @@ router.get("/supervision/search", verifyToken, (req, res) => {
             params.push(`${location}%`);
         }
 
-        // 重点优化：状态使用精确匹配 = ，防止“已销项”查出“待销项”
-        if (isLegal(risk)) {
-            whereSql += " AND status = ?"; 
-            params.push(risk);
-        }
+        whereSql += " AND status LIKE ?";
+        params.push(`%${risk}%`);
 
         // 3. 执行分页查询逻辑
         const countSql = "SELECT COUNT(*) as total FROM supervision_tasks" + whereSql;
         SQLConnect(countSql, params, countRes => {
             const total = countRes[0]?.total || 0;
             const dataSql = `SELECT * FROM supervision_tasks ${whereSql} ORDER BY task_no DESC LIMIT ? OFFSET ?`;
-            
+
             console.log("执行分页SQL:", dataSql, "参数:", [...params, size, offset]);
 
             SQLConnect(dataSql, [...params, size, offset], result => {
