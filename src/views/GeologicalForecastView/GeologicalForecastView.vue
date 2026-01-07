@@ -1,5 +1,5 @@
 <template>
-    <div class="map-container">
+    <div class="map-container" ref="mapContainer">
         <button v-if="isProvince" @click="goBack" class="back-btn">返回全国</button>
         <div id="echarts-chinaMap" class="echarts-chinaMap"></div>
     </div>
@@ -36,14 +36,21 @@ const isProvince = ref(false); // 记录当前状态：是全国还是省份
 onMounted(() => {
     initChina();
 });
+//  模板引用 拿 DOM 
+const mapContainer = ref<HTMLDivElement | null>(null)
+
+//  写函数   获取 加载好的 DOM   一开始的 为 null ，当加载完毕就不会二次赋值，但是函数就可以
+const loadingOptions = () => ({
+    target: mapContainer.value as HTMLDivElement,
+    lock: true,
+    text: `正在加载${name}地图...`,
+    background: 'rgba(255, 255, 255, 0.7)',
+
+})
 
 const goProvince = async (name: string, code: string) => {
-    // 1. 启动 Loading
-    const loadingInstance = ElLoading.service({
-        lock: true,
-        text: `正在加载${name}地图...`,
-        background: 'rgba(0, 0, 0, 0.7)',
-    });
+    // 1. 启动 Loading  --  函数 方式 拿 加载好的 DOM 
+    const loadingInstance = ElLoading.service(loadingOptions());
 
     try {
         // 2. 原有的 API 请求逻辑

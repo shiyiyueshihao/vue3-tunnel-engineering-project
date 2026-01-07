@@ -2,6 +2,8 @@
  *      时间戳格式化工具
  *          ProjectInfoView.vue 的 el-table-column 的 :formatter="dataFormater" 需要四个参数
  *              --  这里做了封装 第三个 就是我们需要处理的时间戳
+ *                   formatter	    用来格式化内容	  function (row: any, column: TableColumnCtx<T>, cellValue: any, index: number) => VNode | string
+ * 
 */
 export function dataFormater(row: any|undefined, column: any|undefined, timestamp: any, index: number | undefined) {
     let date = new Date(timestamp)      //  创建实例对象
