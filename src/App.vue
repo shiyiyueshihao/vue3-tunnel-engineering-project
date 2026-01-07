@@ -95,4 +95,14 @@ body,
 #nprogress .peg {
   box-shadow: 0 0 10px #409EFF, 0 0 5px #409EFF !important;
 }
+
+/* 修改 Loading 文字颜色 */
+.el-loading-parent--relative .el-loading-text {
+  color: #000 !important;
+}
+
+/* 如果你想顺便把那个转圈圈的颜色也改了 */
+/* .el-loading-parent--relative .path {
+  stroke: #ff9900 !important;
+} */
 </style>

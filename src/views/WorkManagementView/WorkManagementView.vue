@@ -18,7 +18,7 @@
         </div>
 
         <!-- 表格与输入框 -->
-        <div class="table-container">
+        <div class="table-container" ref="tableContainer">
             <!-- 上面的 搜索查询等内容 -->
             <div class="top-container" style="display: flex; gap: 20px;text-align: center;">
                 <!-- 时间选择器 -->
@@ -62,7 +62,8 @@
                     <el-table-column prop="supervision_type" label="监督类型" show-overflow-tooltip />
                     <el-table-column prop="responsible_unit" label="责任单位" show-overflow-tooltip />
                     <el-table-column prop="status" label="当前状态" />
-                    <el-table-column prop="update_time" label="更新时间" />
+                    <!-- formatter	用来格式化内容	function  -->
+                    <el-table-column prop="update_time" :formatter="dataFormater" label="更新时间" />
                     <el-table-column prop="report_url" label="操作">
                         <!-- 做有无路径的渲染 -->
                     </el-table-column>
@@ -79,6 +80,7 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted, watch, computed } from 'vue';
 import api from '@/api/index.ts'
+
 /**
  *          定义 卡牌内容 方便渲染数据
  */
@@ -306,8 +308,40 @@ const handleSizeChange = (val: number) => {
  *              分页查询 点击事件 --  逻辑处理 
  *                  搜索之后的分页逻辑 
  *                  无搜索的分页逻辑
+ * 
+ *              这里做 分页点击 loading 效果
+ *                  引入 Loading 组件 
+ *                  配置文件 + 启动
+ *                  关闭
  */
+import { ElLoading } from 'element-plus';
+//  用 模板引用 拿 DOM 元素
+const tableContainer = ref<HTMLDivElement | null>(null)
+
+/**
+ *          配置 Loading options
+ *              设置为函数   一开始的 为 null ，当加载完毕就不会二次赋值，但是函数就可以
+ *                  1.  因为要获取DOM -- tableContainer.value   需要在DOM加载完成才能获取(否则就是全屏加载)
+ *                  2.  也可以将 loadingOptions 写到 onmounted里去 这样就可以获取DOM元素了
+ */
+const loadingOptions = () => ({
+    target: tableContainer.value as HTMLDivElement,//  Loading需要覆盖的DOM节点或者选择器字符串，不设置就是全屏
+    fullscreen: false,   //  是否全屏，配合target使用
+    // lock:true,  //  是否在Loading 出现的时候锁定屏幕滚动(仅全屏时生效)
+    text: "正在查询，请稍候",  //    显示在加载图标下方的提示文字
+    // spinner:"", //  自定义加载图标的雷鸣，可配合第三方库(FontAwesome)
+    background: 'rgba(255, 255, 255, 0.7)',    //  遮罩层的北京颜色
+    // svg:"", //  自定义SVG 加载图标(一般可写svg代码)
+    // svgViewBox:"",  //  配合 svg 使用的视图盒子属性
+    //  修改字体颜色和圈圈颜色在全局配置中设置 App.vue style
+})
+
+
 const handleCurrentChange = (val: number) => {
+
+    //  启动 查询按钮的 loading 效果
+    const loadingInstance = ElLoading.service(loadingOptions())
+
     currentPage3.value = val; // 更新当前页码
     console.log("当前切换到第几页：", val);
 
@@ -321,7 +355,13 @@ const handleCurrentChange = (val: number) => {
                 tableData.list = res.data.result;
                 // 这里不需要更新 totalCount，因为搜索总数没变
             }
-        });
+        }).catch(err => {
+            console.log(err);
+
+        }).finally(() => {
+            //  关闭 loading 效果
+            loadingInstance.close()
+        })
     } else {
         // 普通状态下的翻页
         api.supervisionList(val).then(res => {
@@ -330,7 +370,10 @@ const handleCurrentChange = (val: number) => {
             }
         }).catch(err => {
             console.log(err);
-        });
+        }).finally(() => {
+            //  关闭loading
+            loadingInstance.close()
+        })
     }
 }
 
@@ -342,9 +385,10 @@ const handleCurrentChange = (val: number) => {
  *              value2         标段
  *              value3         状态
  *              input           输入框内容
+ *          
+ *          查询 loading 效果
 */
 function searchInfo() {
-
 
     // 1. 提取核心判断条件 (过滤掉 null, undefined, 和空字符串)
     const hasTime = startTime.value && startTime.value !== 'undefined' && startTime.value !== '';
@@ -363,6 +407,9 @@ function searchInfo() {
         });
         return;
     }
+
+    //  启动 查询按钮的 loading 效果
+    const loadingInstance = ElLoading.service(loadingOptions())
     //  查询 请求 
     //  传入 分页页数  --  1 强制搜索到第一页的    --  每页大小  后端也定死了是8 前端也定死了是8
     api.supervisionSearch(startTime.value, endTime.value, value2.value, value3.value, input.value, 1).then(res => {
@@ -398,7 +445,12 @@ function searchInfo() {
             message: '请输入有效信息',
             type: 'warning',
         })
+    }).finally(() => {
+        //  关闭查询效果的loading按钮
+        loadingInstance.close()
     })
+
+
 }
 
 
@@ -528,7 +580,7 @@ function resertInfo() {
         }
 
         .bottom-container {
-            height: 400px;
+            // height: 400px;
 
             width: 98%;
             margin: 0 auto;
