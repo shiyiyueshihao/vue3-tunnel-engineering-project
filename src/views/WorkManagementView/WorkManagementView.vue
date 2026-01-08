@@ -38,11 +38,11 @@
                 <div style="flex: 1;">
                     <el-button type="primary" @click="searchInfo">查询</el-button>
                 </div>
-                <div style="flex: 1; position: relative;">
-                    <el-button type="warning" @click="resertInfo" style='position: absolute;left: 0;'>重置</el-button>
+                <div style="flex: 1;">
+                    <el-button type="warning" @click="resertInfo">重置</el-button>
                 </div>
                 <div style="flex: 2;">
-                    <el-button type="primary">下达整改通知单</el-button>
+                    <el-button type="primary">下达通知单</el-button>
                 </div>
                 <div style="flex: 2;">
                     <el-button style="">发起现场巡检</el-button>

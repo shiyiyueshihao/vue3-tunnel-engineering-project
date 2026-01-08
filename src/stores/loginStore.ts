@@ -1,31 +1,38 @@
 import { defineStore } from 'pinia'
 
-
-//  给 useLoginStore 的 state 定义一个 接口 类型规范
 interface LoginStoreState {
-    token: string,
+    token: string, // 这里存的是短票 AccessToken
     permission: string,
     username: string
 }
 
 export const useLoginStore = defineStore("login", {
-    //  组合式API
     state: (): LoginStoreState => {
-        //  网络请求拿到的数据 做状态管理 --  后续存储做准备
         return {
             token: "",
             permission: "",
             username: ""
         }
     },
-    //  本地仓库持久化存储方式  --  persistedstate  --  在 全局引入和使用
+    // 增加 actions 来管理数据变化
+    actions: {
+        // 登录或刷新成功后，调用这个方法更新短票
+        setToken(newToken: string) {
+            this.token = newToken;
+        },
+        // 退出登录或彻底过期时，调用这个方法清空
+        clearLoginInfo() {
+            this.token = "";
+            this.permission = "";
+            this.username = "";
+            // 插件会自动清空 localStorage 里的 'login'
+        }
+    },
     persist: {
         storage: localStorage,
-        key: 'login'
+        key: 'login' // 存储在本地的键名
     }
 })
-
-
 
 /*
 pinia-plugin-persistedstate
