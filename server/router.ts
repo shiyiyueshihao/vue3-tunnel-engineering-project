@@ -176,6 +176,25 @@ router.post('/login', (req: Request, res: Response) => {
         }
     });
 });
+
+/**
+ * 7. 退出登录接口
+ * 核心逻辑：清除客户端的 HttpOnly Cookie
+ */
+router.post('/logout', (req: Request, res: Response) => {
+    // 指令浏览器清除名为 refreshToken 的 cookie
+    // 将 maxAge 设为 0 即可立即失效
+    res.cookie('refreshToken', '', {
+        httpOnly: true,
+        secure: false, // 如果是 https 环境请设为 true
+        expires: new Date(0), // 设置过期时间为 1970年，强制立即删除
+        path: '/' // 确保路径一致，否则可能删不掉
+    });
+
+    res.send({ status: 200, msg: "安全退出成功" });
+});
+
+
 /**
  * 3. 刷新 Token 接口 (核心)
  */

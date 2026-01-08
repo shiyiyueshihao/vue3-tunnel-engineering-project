@@ -85,6 +85,7 @@ function loginHandler() {
             loginStore.username = res.data.username
             loginStore.permission = res.data.permission
             router.push('/')
+            ElMessage.success("登录成功！")
         } else {
             //  错误提示 -- 给用户  --  element-plus 自带的错误提示框 Message
             ElMessage.error(res.data.msg)
