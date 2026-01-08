@@ -1,8 +1,28 @@
 import axios from "axios";
-import type { AxiosInstance, InternalAxiosRequestConfig, AxiosResponse } from "axios";
+import type { AxiosInstance, InternalAxiosRequestConfig, AxiosResponse, Canceler } from "axios";
 import qs from "qs"; // 建议使用 qs 库
 import { useLoginStore } from "@/stores/loginStore";
 import { ElMessage } from "element-plus"; //  Element Plus 提示
+
+/**
+ * --- 【新增：防重复点击相关定义】 ---
+ */
+const pendingRequests = new Map<string, Canceler>();
+
+// 生成请求唯一的 key
+const getRequestKey = (config: InternalAxiosRequestConfig) => {
+    return [config.method, config.url, qs.stringify(config.params), qs.stringify(config.data)].join('&');
+};
+
+// 移除并取消重复请求
+const removePendingRequest = (config: InternalAxiosRequestConfig) => {
+    const key = getRequestKey(config);
+    if (pendingRequests.has(key)) {
+        const cancel = pendingRequests.get(key);
+        cancel && cancel("Duplicate request"); // 取消之前的请求
+        pendingRequests.delete(key);
+    }
+};
 
 /**
  * 定义换票期间的请求队列类型
@@ -34,6 +54,12 @@ const instance: AxiosInstance = axios.create({
  */
 instance.interceptors.request.use(
     (config: InternalAxiosRequestConfig) => {
+        // --- 【新增：拦截重复请求逻辑】 ---
+        removePendingRequest(config); // 检查是否有相同的请求在进行
+        config.cancelToken = new axios.CancelToken((c) => {
+            pendingRequests.set(getRequestKey(config), c);
+        });
+
         const loginStore = useLoginStore();
         const token = loginStore.token;
 
@@ -61,11 +87,26 @@ instance.interceptors.request.use(
  */
 instance.interceptors.response.use(
     (response: AxiosResponse) => {
+        // --- 【新增：请求成功，从队列中移除 key】 ---
+        removePendingRequest(response.config as InternalAxiosRequestConfig);
+
         // 后端逻辑成功则直接返回
         return response;
     },
     async (error) => {
         const { config, response } = error;
+
+        // --- 【新增：如果是主动取消的请求，不弹出错误提示】 ---
+        if (axios.isCancel(error)) {
+            console.warn("请求重复已拦截:", error.message);
+            return new Promise(() => {}); // 返回 pending 状态，不进入业务层的 catch
+        }
+
+        // --- 【新增：请求失败也要移除 key】 ---
+        if (config) {
+            removePendingRequest(config);
+        }
+
         const loginStore = useLoginStore();
 
         // --- 【核心重构：双 Token 无感刷新逻辑】 ---
@@ -137,6 +178,7 @@ instance.interceptors.response.use(
  * 通用错误处理提示
  */
 const handleGeneralError = (status: number | undefined, msg: string) => {
+    if (!status) return; // 避免在取消请求时弹出未知错误
     switch (status) {
         case 403: ElMessage.error("拒绝访问"); break;
         case 404: ElMessage.error("请求地址不存在"); break;
