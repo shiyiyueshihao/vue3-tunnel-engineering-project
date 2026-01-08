@@ -37,9 +37,7 @@ const router = useRouter()
  *  用户权限的数据获取
 */
 onMounted(() => {
-    api.getRouter({
-        user: loginStore.permission
-    }).then(res => {
+    api.getRouter().then(res => {
         if (res.data.status === 200) {
             console.log(res.data);
             //  判断当前用户权限
