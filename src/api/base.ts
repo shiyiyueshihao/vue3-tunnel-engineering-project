@@ -6,6 +6,7 @@
 const base = {
     baseURL: "http://localhost:3000",                  //      公共地址
     login: "/api/login",                                          //       登录地址
+    logout:"/api/logout",                                      //       退出登录
     router: "/api/router",                                      //       用户权限
     line: '/api/line',                                                //       获取 line  图表数据
     pie: '/api/pie',                                                 //        获取 pie 图表数据

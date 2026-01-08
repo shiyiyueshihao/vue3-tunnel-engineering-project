@@ -82,20 +82,35 @@ const ControlMenuStore = useControlMenuStore()
  */
 
 import { useLoginStore } from '@/stores/loginStore';
-
+import api from '@/api';
+import { ElMessage } from 'element-plus';
 // import { ref } from 'vue';
 const loginStore = useLoginStore()
 
 //  退出登录
-function logoutHandler() {
-    loginStore.username = ""
-    loginStore.token = ""
-    loginStore.permission = ""
+async function logoutHandler() {
+    try {
+        // 1. 调用后端接口，抹掉 HttpOnly Cookie
+        // 注意：即使后端接口报错，前端也应该继续执行清理逻辑
+        await api.logout();
+    } catch (error) {
+        console.error("后端退出接口调用失败", error);
+    } finally {
+        // 2. 清空 Pinia 商店所有内容（内存中的短 Token）
+        loginStore.username = "";
+        loginStore.token = "";
+        loginStore.permission = "";
 
-    //  别忘了回到登录页面 
-    // router.push("/login")
-    router.replace({ name: 'login' })   // 防止用户点击浏览器回退按钮，又回到已退出的首页
+        // 3. (可选) 清理所有的持久化数据，防止残留
+        localStorage.removeItem('user-storage'); // 如果你用了持久化插件
 
+        // 4. 回到登录页面并替换历史记录
+        // replace 防止用户通过浏览器“后退”按钮回到已退出的系统页面
+        router.replace({ name: 'login' });
+
+        // 5. 提示用户
+        ElMessage.success("您已安全退出");
+    }
 }
 
 /**

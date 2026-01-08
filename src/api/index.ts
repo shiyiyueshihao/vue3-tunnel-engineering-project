@@ -17,6 +17,13 @@ const api = {
         // console.log(params)  // 打印测试 显示账号密码说明前端没问题
         return axios.post(base.baseURL + base.login, params)
     },
+    /**
+     *  退出登录
+    */
+    logout() {
+        // console.log(params)  // 打印测试 显示账号密码说明前端没问题
+        return axios.post(base.baseURL + base.login)
+    },
 
     /**
      *  用户权限
