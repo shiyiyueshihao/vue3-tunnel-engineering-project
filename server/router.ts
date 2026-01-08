@@ -1,13 +1,14 @@
-// const express = require("express")
-import express from 'express' //      --   ts写法
-const router = express.Router()     //  --  R要大写
-//  引入 SQLConncet 
+import express from 'express';
+import type { Request, Response, NextFunction } from 'express';
 import SQLConnect from './SQLConnect.ts'
-//  get方法
 import url from 'url'
-//  引入 token  --  需要一个密钥 ，所以还得创建一个文件夹
+
 import jwt from 'jsonwebtoken'
-import jwtSecret from './jwtSecret.ts' //  引入密钥
+import * as dotenv from 'dotenv';
+import cookieParser from 'cookie-parser'
+import bcrypt from 'bcrypt'; // 用于比对加密后的密码
+import { v4 as uuidv4 } from 'uuid'; // 引入 UUID
+
 import adminData from './data/admin.ts'
 import vipData from './data/vip.ts'
 import lineData from './data/line.ts'
@@ -19,106 +20,205 @@ import multer from 'multer';
 import path from 'path';
 import fs from 'fs'
 
-// 添加接口  --  测试
-// router.get('/list', (req, res) => {
-//     res.send({
-//         status: 200,
-//         message: "测试服务器"
-//     })
-// })
-/*
- *  登录接口   --  index.ts 写了个 /api 主入口 ，所以这里需要  /api+/login
- * */
+// 加载环境变量
+dotenv.config();
 
+const router = express.Router()
 
-// 验证 Token 的中间件
-const verifyToken = (req, res, next) => {
-    // 1. 从请求头拿到 Token
-    // 这里的格式通常是 "Bearer <token>"，所以需要分割字符串
-    const authHeader = req.headers['authorization'];
-    const token = authHeader && authHeader.split(' ')[1];
-
-    if (!token) {
-        return res.status(401).send({ msg: "未提供Token，请登录" });
-    }
-
-    // 2. 开始验证
-    jwt.verify(token, jwtSecret.secret, (err, user) => {
-        if (err) {
-            // 验证失败：Token伪造或者过期
-            return res.status(403).send({ msg: "Token无效或已过期" });
-        }
-
-        // 3. 验证成功：把解出来的数据挂载到 req 对象上，方便后面的接口使用
-        req.user = user;
-        next(); // 通行，继续执行后面的路由逻辑
-    });
-};
-
-
-router.post('/login', (req, res) => {
-    //  接收客户端的参数：username password
-    const { username, password } = req.body;
-    // console.log(username,password); //  打印 账号密码 查看后端有没有测试问题
-    //  执行sql语句 (查询)
-    const sql = "select * from user where username=? and password=?";
-    SQLConnect(sql, [username, password], result => {
-        if (result.length > 0) {
-            /**
-             *  生成 token 
-             *  token：前后端在登录信息交互的时候，通过token验证是否登录成功的字段
-            */
-            const token = jwt.sign({
-                id: result[0].id,
-                username: result[0].username,
-                permission: result[0].permission
-            }, jwtSecret.secret)
-            //  返回给前端的数据
-            res.send({
-                status: 200,
-                // result
-                username: result[0].username,
-                permission: result[0].permission,
-                token
-            })
-        } else {
-            res.send({
-                status: 500,
-                msg: "用户名密码错误"
-            })
-        }
-    })
-})
+// 定义扩展的 Request 类型，方便 TS 识别 req.user
+interface AuthRequest extends Request {
+    user?: any;
+}
 
 
 /**
- *  用户权限 管理
-*/
+ *      临时的“脚本”生成哈希值
+ */
+// async function generateHash() {
+//     const password = '555555'; // 你想设置的明文密码
+//     const saltRounds = 10;     // 加密强度，通常选 10
+    
+//     const hashedPassword = await bcrypt.hash(password, saltRounds);
+    
+//     console.log('--- 你的加密密码如下 ---');
+//     console.log(hashedPassword); 
+//     console.log('-----------------------');
+// }
+// generateHash();
 
-router.get("/router", verifyToken, (req, res) => {
-    const user = url.parse(req.url, true).query.user;
-    switch (user) {
-        case "admin":
-            res.send({
-                status: 200,
-                menuData: adminData
-            })
-            break;
-        case "vip":
-            res.send({
-                status: 200,
-                menuData: vipData
-            })
-            break;
 
-        default:
-            res.send({
-                status: 200,
-                menuData: vipData
-            })
-            break;
+
+/**
+ * 1. 验证 Access Token 的中间件
+ */
+const verifyToken = (req: AuthRequest, res: Response, next: NextFunction) => {
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(' ')[1];
+
+    if (!token) return res.status(401).send({ status: 401, msg: "未提供Token" });
+
+    jwt.verify(token, process.env.JWT_ACCESS_SECRET as string, (err, decoded: any) => {
+        if (err) return res.status(403).send({ status: 403, msg: "Token已失效" });
+
+        // --- 【新增：校验 tick】 ---
+        SQLConnect("SELECT last_login_tick FROM user WHERE id = ?", [decoded.id], (result) => {
+            if (result.length > 0 && result[0].last_login_tick === decoded.tick) {
+                req.user = decoded;
+                next();
+            } else {
+                // 如果数据库里的 tick 和 Token 里的不一致，说明别处登录了
+                return res.status(401).send({ status: 401, msg: "您的账号已在别处登录，请重新登录" });
+            }
+        });
+    });
+};
+/**
+ * 5. 注册接口 (新用户默认权限为 normal)
+ */
+router.post('/register', async (req: Request, res: Response) => {
+    const { username, password, phone } = req.body; // 👈 故意不解构 permission
+
+    try {
+        const hashedPassword = await bcrypt.hash(password, 10);
+
+        // 👈 SQL 语句直接写死 'vip'，不使用外部传参
+        const sql = "INSERT INTO user (username, password, permission, phone) VALUES (?, ?, 'normal', ?)";
+        
+        SQLConnect(sql, [username, hashedPassword, phone], (result, err) => {
+            if (err) {
+                if (err.code === 'ER_DUP_ENTRY') return res.status(400).send({ status: 400, msg: "用户名已存在" });
+                return res.status(500).send({ status: 500, msg: "注册失败" });
+            }
+            res.send({ status: 200, msg: "注册成功，欢迎加入！" });
+        });
+    } catch (error) {
+        res.status(500).send({ status: 500, msg: "服务器错误" });
     }
-})
+});
+
+/**
+ * 6. 管理员修改用户权限 (需要管理员身份)
+ */
+router.post('/update-permission', verifyToken, (req: AuthRequest, res: Response) => {
+    // 1. 检查当前操作者是否有 admin 权限
+    if (req.user.permission !== 'admin') {
+        return res.status(403).send({ status: 403, msg: "只有管理员能修改权限！" });
+    }
+
+    const { targetUserId, newPermission } = req.body;
+
+    const sql = "UPDATE user SET permission = ? WHERE id = ?";
+    SQLConnect(sql, [newPermission, targetUserId], (result, err) => {
+        if (err) return res.status(500).send({ status: 500, msg: "修改失败" });
+        res.send({ status: 200, msg: "权限修改成功" });
+    });
+});
+
+/**
+ * 2. 登录接口：双 Token 签发 + Bcrypt 验证
+ */
+router.post('/login', (req: Request, res: Response) => {
+    const { username, password } = req.body;
+    const sql = "SELECT * FROM user WHERE username=?";
+
+    SQLConnect(sql, [username], async (result, err) => {
+        if (err) return res.status(500).send({ status: 500, msg: "数据库错误" });
+
+        if (result.length > 0) {
+            const user = result[0];
+            const isMatch = await bcrypt.compare(password, user.password);
+
+            if (isMatch) {
+                // --- 【核心修改点 1：生成 UUID】 ---
+                const loginTick = uuidv4(); 
+
+                // --- 【核心修改点 2：存入数据库】 ---
+                const updateSql = "UPDATE user SET last_login_tick = ? WHERE id = ?";
+                SQLConnect(updateSql, [loginTick, user.id], () => {
+                    
+                    // --- 【核心修改点 3：将 tick 放入 Access Token Payload】 ---
+                    const accessToken = jwt.sign(
+                        { 
+                            id: user.id, 
+                            username: user.username, 
+                            permission: user.permission,
+                            tick: loginTick // 以后校验就靠它
+                        },
+                        process.env.JWT_ACCESS_SECRET as string,
+                        { expiresIn: '15m' }
+                    );
+
+                    // Refresh Token 保持不变 (或者也可以根据需求加入 tick)
+                    const refreshToken = jwt.sign(
+                        { id: user.id },
+                        process.env.JWT_REFRESH_SECRET as string,
+                        { expiresIn: '7d' }
+                    );
+
+                    res.cookie('refreshToken', refreshToken, {
+                        httpOnly: true,
+                        secure: false, 
+                        maxAge: 7 * 24 * 60 * 60 * 1000 
+                    });
+
+                    res.send({
+                        status: 200,
+                        username: user.username,
+                        permission: user.permission,
+                        token: accessToken 
+                    });
+                });
+            } else {
+                res.send({ status: 500, msg: "用户名或密码错误" });
+            }
+        } else {
+            res.send({ status: 500, msg: "用户不存在" });
+        }
+    });
+});
+/**
+ * 3. 刷新 Token 接口 (核心)
+ */
+router.post('/refresh', (req: Request, res: Response) => {
+    const refreshToken = req.cookies.refreshToken;
+    if (!refreshToken) return res.status(401).send({ msg: "请重新登录" });
+
+    jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET as string, (err: any, decoded: any) => {
+        if (err) return res.status(403).send({ msg: "登录已失效" });
+
+        // 必须通过 decoded.id 重新查询用户信息，以获取最新的 permission 和 username
+        const sql = "SELECT * FROM user WHERE id=?";
+        SQLConnect(sql, [decoded.id], (result, err) => {
+            if (err || result.length === 0) return res.status(403).send({ msg: "用户不存在" });
+
+            const user = result[0];
+            const newAccessToken = jwt.sign(
+                { id: user.id, username: user.username, permission: user.permission },
+                process.env.JWT_ACCESS_SECRET as string,
+                { expiresIn: '15m' }
+            );
+
+            res.send({ status: 200, token: newAccessToken });
+        });
+    });
+});
+
+/**
+ * 4. 权限接口获取
+ * 不再依赖前端传 user 参数，而是直接从 verifyToken 解出的 payload 里拿
+ */
+router.get("/router", verifyToken, (req: AuthRequest, res: Response) => {
+    // 这里的 req.user 是在 verifyToken 中解出来的
+    const permission = req.user.permission;
+
+    // 根据权限返回对应菜单数据
+    if (permission === 'admin') {
+        res.send({ status: 200, menuData: adminData });
+    } else {
+        res.send({ status: 200, menuData: vipData });
+    }
+});
+
 
 /***
  *  echarts 图表 line图表

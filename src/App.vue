@@ -6,9 +6,37 @@
 
 <script setup lang="ts">
 import { RouterView } from 'vue-router'
-
+import { ElMessageBox } from 'element-plus'
 //  默认初始化 中文 
 localStorage.setItem("lang", "zh")
+
+
+// 在 App.vue 中修改监听逻辑
+window.addEventListener('storage', (e) => {
+  if (e.key === 'login' && e.newValue !== e.oldValue) {
+    const currentPath = window.location.pathname;
+
+    // 逻辑 A：如果正在登录页，发现别的标签页登录成功了，直接带我飞（进首页）
+    if (currentPath === '/login') {
+      const newData = JSON.parse(e.newValue || '{}');
+      if (newData.token) {
+        window.location.href = '/'; // 发现新票，自动登录
+      }
+      return;
+    }
+
+    // 逻辑 B：如果在业务页，弹出正式提醒
+    ElMessageBox.alert('检测到账号已在其他页面登录，请刷新同步状态', '安全提醒', {
+      confirmButtonText: '确定',
+      type: 'warning',
+      callback: () => {
+        // 关键：这里刷新后，由 router.beforeEach 和 axios 拦截器进行后端 Token 校验
+        window.location.reload(); 
+      }
+    });
+  }
+});
+
 
 </script>
 

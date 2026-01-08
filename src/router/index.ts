@@ -23,12 +23,12 @@ import nprogress from 'nprogress'
 // 引入 nprogress 样式（必须引入，否则进度条不可见）
 import 'nprogress/nprogress.css'
 // 配置nprogress配置项（可选）
-nprogress.configure({ 
-    easing: 'ease',      // 动画方式 
-    speed: 500,          // 递增进度条的速度 
-    showSpinner: false,  // 是否显示右上角螺旋加载图标
-    trickleSpeed: 200,   // 自动递增间隔
-    minimum: 0.3         // 初始化时的最小百分比
+nprogress.configure({
+  easing: 'ease',      // 动画方式 
+  speed: 500,          // 递增进度条的速度 
+  showSpinner: false,  // 是否显示右上角螺旋加载图标
+  trickleSpeed: 200,   // 自动递增间隔
+  minimum: 0.3         // 初始化时的最小百分比
 })
 
 const router = createRouter({
@@ -156,53 +156,54 @@ const notFoundRoute = {
 
 // 路由守卫
 router.beforeEach(async (to, from, next) => {
-  //  进度条开始
   nprogress.start()
-
   const loginStore = useLoginStore()
   const controlMenuStore = useControlMenuStore()
 
-  // 登录拦截
+  // 1. 没票直接去登录
   if (to.path !== '/login' && !loginStore.token) {
+    nprogress.done()
     return next('/login')
   }
 
-  // 检查动态路由是否已加载 (以 404 路由是否存在为基准)
   const isRouterLoaded = router.hasRoute('notfound')
 
+  // 2. 有票但没加载动态路由（通常是刷新页面或首次进入）
   if (loginStore.token && !isRouterLoaded) {
     try {
-      // 如果 menus 是空的，直接在这里调一次 API
-      if (controlMenuStore.menus.length === 0) {
-        const res = await api.getRouter({ user: loginStore.permission })
-        if (res.data.status === 200) {
-          controlMenuStore.menus = res.data.menuData.menus
-        }
+      // 获取菜单数据
+      const res = await api.getRouter() // 👈 确保这里不传参，靠 Token 识别
+
+      // 如果后端因为 tick 不一致返回了 401/403，
+      // Axios 拦截器会处理跳转，但这里最好也加一层保护
+      if (res.data.status !== 200) {
+        throw new Error('身份验证失败')
       }
 
-      // 根据最新的 menus 数据动态添加路由
+      controlMenuStore.menus = res.data.menuData.menus
+
+      // 动态添加路由
       controlMenuStore.menus.forEach(item => {
         if (item.path === '/workManagement' && loginStore.permission === 'admin') {
           router.addRoute('layout', workManagementRoute)
         }
       })
-
       // 最后添加 404，确保它在最末尾
       router.addRoute(notFoundRoute)
-
       // 重定向，让路由重新匹配新加载的路由表
       return next({ ...to, replace: true })
 
     } catch (error) {
-      console.error('动态路由加载失败', error)
+      console.error('动态路由加载失败:', error)
+      nprogress.done()
+      // 如果加载失败，说明 Token 可能由于 tick 原因废了，清空并去登录
+      loginStore.token = ''
       return next('/login')
     }
   }
 
-  //  其他逻辑
   next()
 })
-
 
 router.afterEach((to, from) => {
   //  1.  存 路由地址  --   保存跳转路径(存活) 

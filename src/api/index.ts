@@ -1,4 +1,3 @@
-
 import axios from '../utils/request.ts'
 import base from './base.ts'
 
@@ -22,11 +21,8 @@ const api = {
     /**
      *  用户权限
     */
-
-    getRouter(params: object) {
-        return axios.get(base.baseURL + base.router, {
-            params
-        })
+    getRouter() {
+        return axios.get(base.baseURL + base.router)
     },
 
     /**
