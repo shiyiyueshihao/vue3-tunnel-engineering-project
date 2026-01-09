@@ -81,11 +81,12 @@ router.post('/register', async (req: Request, res: Response) => {
     try {
         const hashedPassword = await bcrypt.hash(password, 10);
 
-        // 👈 SQL 语句直接写死 'vip'，不使用外部传参
+        // 👈 SQL 语句直接写死 'normal'，不使用外部传参
         const sql = "INSERT INTO user (username, password, permission, phone) VALUES (?, ?, 'normal', ?)";
         
         SQLConnect(sql, [username, hashedPassword, phone], (result, err) => {
             if (err) {
+                //  ER_DUP_ENTRY 是 MySQL 数据库抛出的标准错误代码（Error Code）。
                 if (err.code === 'ER_DUP_ENTRY') return res.status(400).send({ status: 400, msg: "用户名已存在" });
                 return res.status(500).send({ status: 500, msg: "注册失败" });
             }
