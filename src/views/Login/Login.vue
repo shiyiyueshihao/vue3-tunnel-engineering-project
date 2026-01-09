@@ -13,7 +13,8 @@
                 </el-form-item>
                 <el-form-item>
                     <el-input :prefix-icon="Lock" v-model="user.password" :type="showPassword ? 'text' : 'password'"
-                        placeholder="请输入密码(最小长度为6最大长度为16)" maxlength="16" minlength="6" @keyup.enter="loginHandler" style="margin-bottom: 15px;">
+                        placeholder="请输入密码(最小长度为6最大长度为16)" maxlength="16" minlength="6" @keyup.enter="loginHandler"
+                        style="margin-bottom: 15px;">
                         <!-- @keyup.enter="loginHandler" 监听回车进行登录 -->
                         <!-- 通过 #suffix 在 el-input 内部加后缀 自己写js逻辑-->
                         <template #suffix>
@@ -25,7 +26,8 @@
                     </el-input>
                 </el-form-item>
             </el-form>
-            <el-button class="button" type="primary" @click.prevent="loginHandler">登录</el-button>
+            <el-button class="register"  type="primary" @click.prevent="registerHandler">注册</el-button>
+            <el-button class="login" type="primary" @click.prevent="loginHandler">登录</el-button>
         </div>
     </div>
 </template>
@@ -68,6 +70,15 @@ watch(
         }
     }
 )
+
+/**
+ *      注册 按钮
+ */
+
+function registerHandler() {
+
+}
+
 
 //  登录按钮
 function loginHandler() {
