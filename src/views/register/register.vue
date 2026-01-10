@@ -1,5 +1,7 @@
 <template>
-    <div class="register-container"></div>
+    <div class="register-container">
+        还在开发中~~~
+    </div>
 </template>
 
 <script lang="ts" setup>

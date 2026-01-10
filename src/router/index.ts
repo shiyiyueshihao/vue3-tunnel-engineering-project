@@ -40,6 +40,15 @@ const router = createRouter({
       name: 'login',
       component: Login
     },
+    //  注册页面
+    {
+      path: '/register',
+      name: 'register',
+      component: () => import('../views/register/register.vue'),
+      meta: {
+        key: "注册"
+      }
+    },
     //  文件预览页面
     {
       path: '/filePrewview',
@@ -160,12 +169,20 @@ router.beforeEach(async (to, from, next) => {
   const loginStore = useLoginStore()
   const controlMenuStore = useControlMenuStore()
 
-  // 1. 没票直接去登录
-  if (to.path !== '/login' && !loginStore.token) {
+  // 定义白名单：不需要登录也能访问的路径
+  const whiteList = ['/login', '/register']
+
+  // 1. 修改后的判断：既没票，又要去的页面不在白名单里，才去登录
+  if (!whiteList.includes(to.path) && !loginStore.token) {
     nprogress.done()
     return next('/login')
   }
 
+  // 如果用户已经登录（有 Token），却还想去登录或注册页，建议直接跳转到首页
+  if (whiteList.includes(to.path) && loginStore.token) {
+    nprogress.done()
+    return next('/') // 或者跳转到你的主页 layout
+  }
   const isRouterLoaded = router.hasRoute('notfound')
 
   // 2. 有票但没加载动态路由（通常是刷新页面或首次进入）
@@ -190,6 +207,7 @@ router.beforeEach(async (to, from, next) => {
       })
       // 最后添加 404，确保它在最末尾
       router.addRoute(notFoundRoute)
+      nprogress.done()
       // 重定向，让路由重新匹配新加载的路由表
       return next({ ...to, replace: true })
 

@@ -1,20 +1,25 @@
 <template>
     <div class="login-container">
+
+        <!-- 功能区 -->
         <div class="blurred-container">
-            <div class="title-container">
-                <h3 class="title">隧道后台管理系统登录</h3>
+            <div class="title-container" style="margin:30px 0;">
+                <h3 class="title">隧道后台管理系统</h3>
+            </div>
+            <div style="margin-bottom: 50px;">
+                <h3 style="font-size: 20px;">Vue3项目系统</h3>
             </div>
             <!-- 这里的model 统一收集当前表单内所有表单项 方便后续统一管理 / 提交表单数据 -->
             <el-form class="form" :model="user">
                 <el-form-item>
                     <!-- prefix-icon  加前缀 suffix 加后缀 -->
                     <el-input :prefix-icon="User" v-model="user.username" type="text" placeholder="请输入账号"
-                        @keyup.enter="loginHandler" style="margin-bottom: 15px;" />
+                        @keyup.enter="loginHandler" style="margin-bottom: 15px;height: 50px;" />
                 </el-form-item>
                 <el-form-item>
                     <el-input :prefix-icon="Lock" v-model="user.password" :type="showPassword ? 'text' : 'password'"
                         placeholder="请输入密码(最小长度为6最大长度为16)" maxlength="16" minlength="6" @keyup.enter="loginHandler"
-                        style="margin-bottom: 15px;">
+                        style="margin-bottom: 15px;height: 50px;">
                         <!-- @keyup.enter="loginHandler" 监听回车进行登录 -->
                         <!-- 通过 #suffix 在 el-input 内部加后缀 自己写js逻辑-->
                         <template #suffix>
@@ -25,10 +30,25 @@
                         </template>
                     </el-input>
                 </el-form-item>
+                
+                <!-- 记住我 -->
+                <div class="remeberMe" style="display: flex;justify-content: space-between;margin-bottom: 15px;">
+                    <el-checkbox v-model="rememberMe" label="记住我" size="large" style="height: auto;" />
+                    <router-link to="#" style="font-size: 14px;">忘记密码？</router-link>
+                </div>
+                <!-- 协议 -->
+                <div></div>
             </el-form>
-            <el-button class="register"  type="primary" @click.prevent="registerHandler">注册</el-button>
-            <el-button class="login" type="primary" @click.prevent="loginHandler">登录</el-button>
+
+            <el-button class="login" type="primary" @click.prevent="loginHandler"
+                style="margin-bottom: 15px;height: 40px;">登录</el-button>
+            <div class="register">
+                <span style="font-size: 16px;">还没有账号？</span>
+                <router-link to="/register" style="font-size: 16px;color: blue;">立即注册</router-link>
+            </div>
         </div>
+
+
     </div>
 </template>
 
@@ -106,6 +126,12 @@ function loginHandler() {
 
 
 
+/**
+ *          记住我
+ */
+const rememberMe = ref<boolean>(false)
+
+
 </script>
 
 <style scoped lang="scss">
@@ -121,36 +147,36 @@ function loginHandler() {
 .login-container {
     width: 100%;
     height: 100%;
-    background-image: url('../../assets/images/LoginBackgroundImage.png');
-    background-position: center; //核心：让背景图水平、垂直都居中
-    background-repeat: no-repeat; //避免图片重复平铺
-    background-size: cover; //让图片覆盖容器（保持比例，裁剪超出部分），也可以用 contain（完整显示图片）
-    box-sizing: border-box;
+    background-color: #EAEEF5;
+    position: relative;
     text-align: center;
-    padding-top: 28vh;
 
-    //  模糊窗口
     .blurred-container {
+
+        position: absolute;
+        top: 15%;
+        right: 5%;
+        box-shadow: 0 0 50px gray;
 
         @include customMedia.custom-media(0, 786) {
             width: 300px;
-            height: 240px;
+            height: 540px;
         }
 
         @include customMedia.custom-media(786, 1200) {
             width: 350px;
-            height: 240px;
+            height: 540px;
         }
 
         @include customMedia.custom-media(1200, 2560) {
             width: 400px;
-            height: 240px;
+            height: 540px;
         }
 
         //  添加动画  过渡平滑
         transition: all 500ms ease;
-        margin: 0 auto;
-        background-color: rgba($color: #fff, $alpha: 0.5);
+
+        background-color: #fff;
         border-radius: 10px;
 
         .title {
@@ -166,20 +192,13 @@ function loginHandler() {
                 font-size: 37px;
             }
 
-            // @include custom-media(1920, 2560) {
-            //     font-size: ;
-            // }
-            // @include custom-media(2560) {
-            //     font-size: ;
-            // }
-
             transition: font-size 500ms ease;
 
             color: black;
             font-family: "幼圆";
             text-align: center;
             padding-top: 25px;
-            padding-bottom: 40px;
+
         }
 
         .form {
@@ -197,12 +216,6 @@ function loginHandler() {
                 width: 370px;
             }
 
-            // @include custom-media(1920, 2560) {
-            //     width: $fontSize * 2;
-            // }
-            // @include custom-media(2560) {
-            //     width: $fontSize * 1;
-            // }
             transition: width 500ms ease;
 
             margin: 0 auto;
@@ -214,5 +227,22 @@ function loginHandler() {
         }
     }
 
+}
+
+.login {
+    @media screen and (max-width:786px) {
+        width: 270px;
+    }
+
+    @media screen and (min-width:786px) and (max-width:1200px) {
+        width: 300px;
+    }
+
+    @media screen and (min-width:1200px) and (max-width:2560px) {
+        width: 370px;
+    }
+
+    border-radius: 50px;
+    transition: width 500ms ease;
 }
 </style>
