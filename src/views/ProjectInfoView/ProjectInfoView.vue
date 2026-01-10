@@ -305,9 +305,6 @@ const dialogEditorVisible = ref<boolean>(false)
 const editorID = ref<number>(0)
 function handleEdit(index: number, row: rowType) {
 
-    //  loading 加载
-    const loadingInstance = ElLoading.service(loadingOptions())
-
     //      数据回显 拿到最新的数据  用 网络请求
     console.log(index, row);
     dialogEditorVisible.value = true
@@ -333,9 +330,6 @@ function handleEdit(index: number, row: rowType) {
         }
     }).catch(err => {
         console.log(err);
-    }).finally(() => {
-        //  关闭 loading
-        loadingInstance.close()
     })
 
 }

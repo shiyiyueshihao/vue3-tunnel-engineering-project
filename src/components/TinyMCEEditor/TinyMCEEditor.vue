@@ -112,7 +112,10 @@ onMounted(() => {
     tinymce.init({})
 
     //  拿到唯一 ID 再次网络请求 -- 预更新 即可拿到 remark 然后赋值
-    api.preFormInfo({ id: props.editorID }).then(res => {
+    api.preFormInfo({
+        id: props.editorID,
+        _from: 'tinymce' // 添加一个自定义标记参数  --  让浏览器认为这里的数据跟之前的请求不一致 即可通过
+    }).then(res => {
         if (res.data.status === 200) {
             textContent.value = res.data.result.remark
         }
