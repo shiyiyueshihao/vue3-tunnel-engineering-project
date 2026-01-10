@@ -82,10 +82,12 @@ const ControlMenuStore = useControlMenuStore()
  */
 
 import { useLoginStore } from '@/stores/loginStore';
+import { useRememberMeStore } from '@/stores/RememberMeStore';
 import api from '@/api';
 import { ElMessage } from 'element-plus';
 // import { ref } from 'vue';
 const loginStore = useLoginStore()
+const RememberMeStore = useRememberMeStore()
 
 //  退出登录
 async function logoutHandler() {
@@ -101,6 +103,9 @@ async function logoutHandler() {
         loginStore.token = "";
         loginStore.permission = "";
 
+        //  记住我 登录   --  状态 和  re-token 清除
+        RememberMeStore.username = "";
+        RememberMeStore.remember_token = "";
         // 3. (可选) 清理所有的持久化数据，防止残留
         localStorage.removeItem('user-storage'); // 如果你用了持久化插件
 

@@ -37,9 +37,9 @@ interface AuthRequest extends Request {
 // async function generateHash() {
 //     const password = '555555'; // 你想设置的明文密码
 //     const saltRounds = 10;     // 加密强度，通常选 10
-    
+
 //     const hashedPassword = await bcrypt.hash(password, saltRounds);
-    
+
 //     console.log('--- 你的加密密码如下 ---');
 //     console.log(hashedPassword); 
 //     console.log('-----------------------');
@@ -83,7 +83,7 @@ router.post('/register', async (req: Request, res: Response) => {
 
         // 👈 SQL 语句直接写死 'normal'，不使用外部传参
         const sql = "INSERT INTO user (username, password, permission, phone) VALUES (?, ?, 'normal', ?)";
-        
+
         SQLConnect(sql, [username, hashedPassword, phone], (result, err) => {
             if (err) {
                 //  ER_DUP_ENTRY 是 MySQL 数据库抛出的标准错误代码（Error Code）。
@@ -116,64 +116,136 @@ router.post('/update-permission', verifyToken, (req: AuthRequest, res: Response)
 });
 
 /**
- * 2. 登录接口：双 Token 签发 + Bcrypt 验证
+ *      常规登录
+ *              1.  浏览器信息 验证 User-Agent 强校验
+ *              2.  短token 验证
+ *              3.  uuid  单点登录 验证
+ *              4.  
  */
 router.post('/login', (req: Request, res: Response) => {
-    const { username, password } = req.body;
+    const { username, password, rememberMe } = req.body;
+    // 无论是否记住我，都先获取当前的浏览器指纹
+    const currentUserAgent = req.headers['user-agent'] || 'unknown';
+
     const sql = "SELECT * FROM user WHERE username=?";
 
     SQLConnect(sql, [username], async (result, err) => {
         if (err) return res.status(500).send({ status: 500, msg: "数据库错误" });
+        if (result.length === 0) return res.status(401).send({ status: 401, msg: "用户不存在" });
+
+        const user = result[0];
+        const isMatch = await bcrypt.compare(password, user.password);
+        if (!isMatch) return res.status(401).send({ status: 401, msg: "用户名或密码错误" });
+
+        const loginTick = uuidv4(); // 用于踢人下线逻辑
+        let rememberTokenForClient = null;
+        let deviceInfoForDb = null;
+
+        // 如果勾选了记住我，就准备好存入数据库的值
+        if (rememberMe) {
+            rememberTokenForClient = uuidv4();
+            deviceInfoForDb = currentUserAgent; // 绑定指纹
+        } else {
+            // 如果没勾选，我们要确保数据库里的旧凭证和旧指纹被清空
+            rememberTokenForClient = null;
+            deviceInfoForDb = null;
+        }
+
+        // --- 核心修改：无论如何都更新这四个字段 ---
+        const updateSql = "UPDATE user SET last_login_tick = ?, remember_token = ?, device_info = ? WHERE id = ?";
+        SQLConnect(updateSql, [loginTick, rememberTokenForClient, deviceInfoForDb, user.id], (updateResult, updateErr) => {
+            if (updateErr) return res.status(500).send({ status: 500, msg: "状态更新失败" });
+
+            // 签发 Token 逻辑保持不变...
+            const accessToken = jwt.sign(
+                { id: user.id, username: user.username, permission: user.permission, tick: loginTick },
+                process.env.JWT_ACCESS_SECRET as string,
+                { expiresIn: '15m' }
+            );
+
+            // 签发 Refresh Token (HttpOnly Cookie 方案)
+            const refreshToken = jwt.sign(
+                { id: user.id },
+                process.env.JWT_REFRESH_SECRET as string,
+                { expiresIn: '7d' }
+            );
+
+            res.cookie('refreshToken', refreshToken, {
+                httpOnly: true,
+                secure: false, // 生产环境建议 true
+                maxAge: 7 * 24 * 60 * 60 * 1000
+            });
+
+            res.send({
+                status: 200,
+                msg: "登录成功",
+                token: accessToken,
+                remember_token: rememberTokenForClient,
+                username: user.username,
+                permission: user.permission
+            });
+        });
+    });
+});
+
+/**
+ *          凭证登录 (Login By Token)
+ *              1.  增加了 浏览器信息 验证 User-Agent 强校验
+ *              2.  rem-token 验证  并 替换
+ *                   
+ */
+router.post('/login-by-token', (req: Request, res: Response) => {
+    const { username, remember_token } = req.body;
+    // 获取发起自动登录请求的当前浏览器指纹
+    const currentUserAgent = req.headers['user-agent'] || 'unknown';
+
+    if (!username || !remember_token) {
+        return res.status(400).send({ status: 400, msg: "凭证不完整" });
+    }
+
+    // 关键：SQL 查询不仅比对 token，还要比对 device_info
+    const sql = "SELECT * FROM user WHERE username = ? AND remember_token = ? AND device_info = ?";
+    
+    SQLConnect(sql, [username, remember_token, currentUserAgent], (result, err) => {
+        if (err) return res.status(500).send({ status: 500, msg: "数据库错误" });
 
         if (result.length > 0) {
             const user = result[0];
-            const isMatch = await bcrypt.compare(password, user.password);
 
-            if (isMatch) {
-                // --- 【核心修改点 1：生成 UUID】 ---
-                const loginTick = uuidv4(); 
+            // 验证通过，执行 Token 轮转（生成新票、新 tick、重新绑定当前 UA）
+            const newTick = uuidv4();
+            const newRememberToken = uuidv4();
 
-                // --- 【核心修改点 2：存入数据库】 ---
-                const updateSql = "UPDATE user SET last_login_tick = ? WHERE id = ?";
-                SQLConnect(updateSql, [loginTick, user.id], () => {
-                    
-                    // --- 【核心修改点 3：将 tick 放入 Access Token Payload】 ---
-                    const accessToken = jwt.sign(
-                        { 
-                            id: user.id, 
-                            username: user.username, 
-                            permission: user.permission,
-                            tick: loginTick // 以后校验就靠它
-                        },
-                        process.env.JWT_ACCESS_SECRET as string,
-                        { expiresIn: '15m' }
-                    );
+            const updateSql = "UPDATE user SET last_login_tick = ?, remember_token = ?, device_info = ? WHERE id = ?";
+            SQLConnect(updateSql, [newTick, newRememberToken, currentUserAgent, user.id], () => {
 
-                    // Refresh Token 保持不变 (或者也可以根据需求加入 tick)
-                    const refreshToken = jwt.sign(
-                        { id: user.id },
-                        process.env.JWT_REFRESH_SECRET as string,
-                        { expiresIn: '7d' }
-                    );
+                // 签发新的 Access Token
+                const accessToken = jwt.sign(
+                    { id: user.id, username: user.username, permission: user.permission, tick: newTick },
+                    process.env.JWT_ACCESS_SECRET as string,
+                    { expiresIn: '15m' }
+                );
 
-                    res.cookie('refreshToken', refreshToken, {
-                        httpOnly: true,
-                        secure: false, 
-                        maxAge: 7 * 24 * 60 * 60 * 1000 
-                    });
+                // 同步签发新的 Refresh Token
+                const refreshToken = jwt.sign(
+                    { id: user.id },
+                    process.env.JWT_REFRESH_SECRET as string,
+                    { expiresIn: '7d' }
+                );
+                res.cookie('refreshToken', refreshToken, { httpOnly: true, maxAge: 7 * 24 * 3600 * 1000 });
 
-                    res.send({
-                        status: 200,
-                        username: user.username,
-                        permission: user.permission,
-                        token: accessToken 
-                    });
+                res.send({
+                    status: 200,
+                    msg: "登录成功",
+                    token: accessToken,
+                    remember_token: newRememberToken,
+                    username: user.username,
+                    permission: user.permission
                 });
-            } else {
-                res.send({ status: 500, msg: "用户名或密码错误" });
-            }
+            });
         } else {
-            res.send({ status: 500, msg: "用户不存在" });
+            // 如果 Token 存在但 UA 不匹配，或者 Token 已失效
+            res.status(401).send({ status: 401, msg: "登录环境异常或凭证已失效，请重新登录" });
         }
     });
 });

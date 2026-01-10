@@ -3,7 +3,7 @@
 
         <!-- 功能区 -->
         <div class="blurred-container">
-            <div class="title-container" style="margin:30px 0;">
+            <div class="title-container" style="margin:40px 0;">
                 <h3 class="title">隧道后台管理系统</h3>
             </div>
             <div style="margin-bottom: 50px;">
@@ -30,9 +30,10 @@
                         </template>
                     </el-input>
                 </el-form-item>
-                
+
                 <!-- 记住我 -->
-                <div class="remeberMe" style="display: flex;justify-content: space-between;margin-bottom: 15px;">
+                <div class="rememberMe-container"
+                    style="display: flex;justify-content: space-between;margin-bottom: 15px;">
                     <el-checkbox v-model="rememberMe" label="记住我" size="large" style="height: auto;" />
                     <router-link to="#" style="font-size: 14px;">忘记密码？</router-link>
                 </div>
@@ -56,7 +57,7 @@
 //  element-plus 自带的 眼睛 
 import { View, Hide, User, Lock } from '@element-plus/icons-vue';
 import { ElMessage } from 'element-plus'
-import { reactive, ref, watch } from 'vue';
+import { onMounted, reactive, ref, watch } from 'vue';
 //  引入 封装好的 api --  登录调用
 import api from '../../api/index.ts'
 //  引入路由  --  useRouter
@@ -100,10 +101,34 @@ function registerHandler() {
 }
 
 
-//  登录按钮
-function loginHandler() {
-    // console.log(user);
-    //  调用 api 实现post 接口登录
+/**
+ *      记住我
+ */
+const rememberMe = ref<boolean>(false)
+
+// 用 pinia 记录 remember_token 
+import { useRememberMeStore } from '@/stores/RememberMeStore.ts';
+const RememberMeStore = useRememberMeStore()
+
+//  做一次  掉取 看上次是否记住账号密码
+rememberMe.value = RememberMeStore.rememberMe
+/**
+ *          页面初始 因为有记住状态 所以就赋值账号密码和保存这个✓还有re-token
+ */
+onMounted(() => {
+    //  将 账号密码赋值
+    const isActive = !!rememberMe.value;
+    if (isActive) {
+        user.username = RememberMeStore.username;
+        user.password = "******_saved"
+    }
+})
+
+/**
+ *          封装 登录  功能
+ */
+
+function login() {
     api.getLogin({
         username: user.username,
         password: user.password
@@ -111,25 +136,83 @@ function loginHandler() {
         // console.log(res.data)
         //  登录成功之后才能给赋值 ！！
         if (res.data.status == 200) {
-            //  赋值完 可以用 vue 测试工具里面的小菠萝 来 查看数据 
             loginStore.token = res.data.token
             loginStore.username = res.data.username
             loginStore.permission = res.data.permission
+            RememberMeStore.password = "******_saved"
+            RememberMeStore.remember_token = res.data.remember_token
             router.push('/')
             ElMessage.success("登录成功！")
         } else {
             //  错误提示 -- 给用户  --  element-plus 自带的错误提示框 Message
             ElMessage.error(res.data.msg)
         }
+    }).catch(err => {
+        console.log(err);
+
+    }).finally(() => {
     })
+
+
 }
 
-
-
 /**
- *          记住我
+ *          登录按钮 
+ *              有 记住我 逻辑
  */
-const rememberMe = ref<boolean>(false)
+
+function loginHandler() {
+
+    const isActive = !!rememberMe.value;
+    //  记住我 处于激活状态
+    if (isActive) {
+
+        const rememberToken = RememberMeStore.remember_token
+        //  记住我  就将 后续的记住保存在存储中
+        RememberMeStore.rememberMe = true
+        //  有 rem-token  --  说明已经登陆过一次了
+        if (rememberToken) {
+
+            //  调用 api  进行 rem-token 登录
+            api.loginByToken({
+                username: user.username,
+                remember_token: rememberToken
+            }).then(res => {
+                if (res.data.status === 200) {
+
+                    //  做 第二次 打开页面 保存记住我 和 保存账号密码操作
+
+                    loginStore.username = res.data.username
+                    loginStore.permission = res.data.permission
+                    RememberMeStore.remember_token = res.data.remember_token
+                    RememberMeStore.password = "******_saved"
+                    loginStore.token = res.data.token;
+                    router.push('/')
+                    ElMessage.success("登录成功！")
+                }
+            }).catch(err => {
+                console.log(err);
+                ElMessage.error(err)
+
+            }).finally(() => {
+            })
+
+        } else {
+            //  没有 rem-token  说明第一次登录  
+            login()
+        }
+
+    } else {
+        //  记住我 没打勾
+        login()
+        //  没记住 需要将 状态 清掉
+        RememberMeStore.username = "";
+        RememberMeStore.rememberMe = false;
+        RememberMeStore.password = ""
+        RememberMeStore.remember_token = ""
+    }
+
+}
 
 
 </script>
@@ -147,7 +230,11 @@ const rememberMe = ref<boolean>(false)
 .login-container {
     width: 100%;
     height: 100%;
-    background-color: #EAEEF5;
+    // background-color: #EAEEF5;
+    background-image: url(../../assets/images/loginBackground.png);
+    background-repeat: no-repeat;
+    background-size: cover;
+    background-position: 50%;
     position: relative;
     text-align: center;
 
@@ -157,6 +244,8 @@ const rememberMe = ref<boolean>(false)
         top: 15%;
         right: 5%;
         box-shadow: 0 0 50px gray;
+        background-color: rgba($color: #fff, $alpha: 0.7);
+        border-radius: 10px;
 
         @include customMedia.custom-media(0, 786) {
             width: 300px;
@@ -175,9 +264,6 @@ const rememberMe = ref<boolean>(false)
 
         //  添加动画  过渡平滑
         transition: all 500ms ease;
-
-        background-color: #fff;
-        border-radius: 10px;
 
         .title {
             @include customMedia.custom-media(0, 786) {

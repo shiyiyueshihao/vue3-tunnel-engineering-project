@@ -1,13 +1,21 @@
 import axios from '../utils/request.ts'
 import base from './base.ts'
 
+//  登录参数
 interface PostLoginParams {
     username: string | number,
     password: string | number
 }
+//  页码
 interface pageParams {
     page: number
 }
+//  记住我 参数
+interface PostLoginByTokenParams {
+    username: string | number,
+    remember_token: string | number
+}
+
 
 const api = {
     /**
@@ -17,6 +25,12 @@ const api = {
         // console.log(params)  // 打印测试 显示账号密码说明前端没问题
         return axios.post(base.baseURL + base.login, params)
     },
+    /**
+     *      记住我 登录
+    */
+   loginByToken(params: PostLoginByTokenParams) {
+       return axios.post(base.baseURL + base.loginByToken, params)
+   },
     /**
      *  退出登录
     */
