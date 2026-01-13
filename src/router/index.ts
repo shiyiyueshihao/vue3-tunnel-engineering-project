@@ -153,14 +153,14 @@ const notFoundRoute = {
   component: () => import('../components/NotFound/NotFound.vue'),
 }
 
+let isFetching = false; //  状态锁
 
-// 路由守卫
 router.beforeEach(async (to, from, next) => {
   nprogress.start()
   const loginStore = useLoginStore()
   const controlMenuStore = useControlMenuStore()
 
-  // 1. 没票直接去登录
+  // 没票直接去登录
   if (to.path !== '/login' && !loginStore.token) {
     nprogress.done()
     return next('/login')
@@ -168,35 +168,45 @@ router.beforeEach(async (to, from, next) => {
 
   const isRouterLoaded = router.hasRoute('notfound')
 
-  // 2. 有票但没加载动态路由（通常是刷新页面或首次进入）
+  // 有票但没加载动态路由
   if (loginStore.token && !isRouterLoaded) {
+
+    if (isFetching) {
+
+      return;
+    }
+
+    isFetching = true; // 开启锁
+
     try {
       // 获取菜单数据
-      const res = await api.getRouter() // 👈 确保这里不传参，靠 Token 识别
+      const res = await api.getRouter()
 
-      // 如果后端因为 tick 不一致返回了 401/403，
-      // Axios 拦截器会处理跳转，但这里最好也加一层保护
       if (res.data.status !== 200) {
         throw new Error('身份验证失败')
       }
 
       controlMenuStore.menus = res.data.menuData.menus
 
-      // 动态添加路由
+      // 动态添加路由逻辑
       controlMenuStore.menus.forEach(item => {
         if (item.path === '/workManagement' && loginStore.permission === 'admin') {
           router.addRoute('layout', workManagementRoute)
         }
       })
-      // 最后添加 404，确保它在最末尾
+
       router.addRoute(notFoundRoute)
+
+      // 释放锁
+      isFetching = false;
+
       // 重定向，让路由重新匹配新加载的路由表
       return next({ ...to, replace: true })
 
     } catch (error) {
       console.error('动态路由加载失败:', error)
+      isFetching = false; // 出错也要释放锁
       nprogress.done()
-      // 如果加载失败，说明 Token 可能由于 tick 原因废了，清空并去登录
       loginStore.token = ''
       return next('/login')
     }
