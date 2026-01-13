@@ -9,7 +9,7 @@ import bodyParser from 'body-parser'
 
 // ✅ 正确写法：
 app.use(cors({
-    origin: 'http://localhost:5173', // 👈 这里填你前端 Vue 运行的具体地址
+    origin: ['http://localhost:5173', 'http://localhost:4173'], // 👈 这里填你前端 Vue 运行的具体地址
     credentials: true,               // 👈 必须设为 true，允许跨域传 Cookie
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization']
