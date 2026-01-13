@@ -3,7 +3,7 @@ import base from './base.ts'
 
 interface PostLoginParams {
     username: string | number,
-    password: string | number
+    password: string | number,
 }
 interface pageParams {
     page: number

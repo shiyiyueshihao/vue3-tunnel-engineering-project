@@ -6,25 +6,25 @@
             <el-icon class="box-icon" style="color:#409EFF">
                 <Notification />
             </el-icon>
-            <span class="box-text">隧道数量：1000个</span>
+            <span class="box-text">隧道数量：<span>{{ tunnel }}</span> 个</span> 
         </div>
         <div class="box">
             <el-icon class="box-icon" style="color:#67C23A">
                 <Compass />
             </el-icon>
-            <span class="box-text">检验合格：805个</span>
+            <span class="box-text">检验合格：<span>{{ check }}</span> 个</span>
         </div>
         <div class="box">
             <el-icon class="box-icon" style="color:#E6A23C">
                 <Bell />
             </el-icon>
-            <span class="box-text">正在施工：302个</span>
+            <span class="box-text">正在施工：<span>{{ construction }}</span> 个</span>
         </div>
         <div class="box">
             <el-icon class="box-icon" style="color:#A29BFE">
                 <Odometer />
             </el-icon>
-            <span class="box-text">地质预报：5000个</span>
+            <span class="box-text">地质预报：<span>{{ forecast }}</span>个</span>
         </div>
     </div>
     <!--    
@@ -62,19 +62,15 @@ let myChartBar: any = null;
 // 抽取 resize 函数
 const handleResize = () => {
     if (myChartLine) {
-        console.log('图表正在自适应...');
         myChartLine.resize();
     }
     if (myChartPie) {
-        console.log('图表正在自适应...');
         myChartPie.resize();
     }
     if (myChartRadar) {
-        console.log('图表正在自适应...');
         myChartRadar.resize();
     }
     if (myChartBar) {
-        console.log('图表正在自适应...');
         myChartBar.resize();
     }
 };
@@ -133,6 +129,29 @@ onUnmounted(() => {
     }
 });
 
+
+/**
+ *     跳动的数据 调整
+ *          隧道数量    tunnel
+ *          检验合格    check
+ *          正在施工    construction
+ *          地质预报    forecast
+ * 
+ */
+
+const tunnel = ref<number>(0)
+const check = ref<number> (0)
+const construction = ref<number >(0)
+const forecast = ref<number>(0)
+import { animateCount } from "@/utils/utils";
+onMounted(() => {
+    animateCount(1000, 2000, tunnel);
+    animateCount(805, 2000, check);
+    animateCount(302, 2000, construction);
+    animateCount(5000, 2000, forecast);
+
+})
+
 </script>
 
 <style scoped lang="scss">
@@ -160,6 +179,10 @@ onUnmounted(() => {
 
         .box-text {
             font-size: 18px;
+            span{
+                font-size: 25px;
+                font-weight: 700;
+            }
         }
     }
 

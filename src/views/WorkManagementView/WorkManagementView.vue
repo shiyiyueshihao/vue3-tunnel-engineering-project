@@ -11,7 +11,7 @@
                 </div>
                 <div :class="`${item.name}-content`">
                     <p class="text">{{ item.text }}</p>
-                    <p class="num">{{ item.num }}</p>
+                    <p class="num">{{ item.num }} <span v-if="item.name === 'green'">%</span> </p>
                     <p class="remark">{{ item.remark }}</p>
                 </div>
             </el-card>
@@ -85,37 +85,50 @@ import api from '@/api/index.ts'
  *          定义 卡牌内容 方便渲染数据
  */
 
+ const planNum = ref<number>(0)
+const superviseNum = ref<number>(0)
+const closeNum = ref<number>(0)
+const qualifyNum = ref<number>(0)
+
 const cardData = reactive({
     list: [
         {
             name: "blue",
             text: "本月监督计划",
-            num: 1250,
+            num: planNum,
             remark: "任务总数",
             iconName: "icon-yiwanchengshijian"
         },
         {
             name: "orange",
             text: "待办监督项",
-            num: 35,
+            num: superviseNum,
             remark: "今日待核查",
             iconName: "icon-yiwanchengshijian"
         },
         {
             name: "red",
             text: "未闭环隐患",
-            num: 18,
+            num: closeNum,
             remark: "逾期未整改",
             iconName: "icon-sanjiaogantanhao"
         },
         {
             name: "green",
             text: "监督合格率",
-            num: "96.5%",    //  这个可能需要你算 现在写死吧
+            num: qualifyNum , 
             remark: "质量受控水平",
             iconName: "icon-yewu_hege"
         },
     ]
+})
+
+import { animateCount } from '@/utils/utils.ts';
+onMounted(() => {
+    animateCount(1250, 2000, planNum)
+    animateCount(35, 2000, superviseNum)
+    animateCount(18, 2000, closeNum)
+    animateCount(96.5, 2000, qualifyNum)
 })
 
 
