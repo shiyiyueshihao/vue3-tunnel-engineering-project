@@ -153,7 +153,7 @@ function loginHandler() {
     width: 100%;
     height: 100%;
     // background-color: #EAEEF5;
-    background-image: url(../../assets/images/loginBackground.png);
+    background-image: url(../../assets/images/loginBackground.webp);
     background-repeat: no-repeat;
     background-size: cover;
     background-position: 50%;
