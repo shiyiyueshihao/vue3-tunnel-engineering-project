@@ -35,7 +35,7 @@ import enLang from '@/i18n/en/en.ts'
 const i18n = createI18n({
 
     legacy: false,                       //      必须显示设为 false ，才能在 setup 中 使用 useI18n
-    locale: String(localStorage.getItem("lang")),                //      设置当前语言环境   默认 中文       --      动态修改(通过获取本地存储)
+    locale: localStorage.getItem("lang") || 'zh',                //      设置当前语言环境   默认 中文       --      动态修改(通过获取本地存储)
     globalInjection: true,               //      允许访问形式 $t 来访问
 
     messages: {

@@ -16,6 +16,7 @@
             <el-breadcrumb separator="/">
                 <!-- <el-breadcrumb-item :to="{ path: '/' }">返回首页</el-breadcrumb-item> -->
                 <!-- 用  i18n 加载 文本  实现 中英文切换 -->
+                <!-- 原先 {{ $t('message.navs') }}  现在显示引入   -->
                 <el-breadcrumb-item>{{ $t('message.navs') }}</el-breadcrumb-item>
                 <!-- 直接拿仓库的  地址  防止刷新回到初始状态 -->
                 <el-breadcrumb-item>{{ ControlMenuStore.breadcrumb }}</el-breadcrumb-item>
@@ -70,6 +71,7 @@
 import { Fold, Expand, ArrowDown } from '@element-plus/icons-vue'
 import { useRouter } from 'vue-router';
 import { useControlMenuStore } from '@/stores/ControlMenuStore';
+
 
 
 const router = useRouter()
