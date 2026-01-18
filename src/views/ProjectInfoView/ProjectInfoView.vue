@@ -6,7 +6,8 @@
             <el-form class="search-form" @submit.prevent :model="projectInfo.list" label-width="auto"
                 style="max-width: 600px">
                 <el-form-item label="项目状态：" class="search-input">
-                    <el-input @keyup.enter="onSearch" v-model="searchInfo" placeholder="请输入想要搜索的信息" clearable style="width: 180px;" />
+                    <el-input @keyup.enter="onSearch" v-model="searchInfo" placeholder="请输入想要搜索的信息" clearable
+                        style="width: 180px;" />
                 </el-form-item>
                 <el-form-item class="search-button">
                     <el-button type="primary" plain @click="onSearch">搜索</el-button>
@@ -142,8 +143,8 @@
 
 
     <!-- 编辑按钮 弹出对话框   destroy-on-close 关闭时 销毁对话框 让他再次渲染触发编辑和富文本框 -->
-    <el-dialog destroy-on-close v-model="dialogEditorVisible" title="编辑隧道项目信息" width="700" :before-close="handleClose"
-        class="editor-form-dialog" center>
+    <el-dialog  destroy-on-close v-model="dialogEditorVisible" title="编辑隧道项目信息" width="700"
+        :before-close="handleClose" class="editor-form-dialog" center>
 
         <!-- 多个输入框信息开始 -->
         <el-form :model="EditorFormInfo" class="demo-form-inline" :rules="rules">
@@ -245,7 +246,7 @@ const loadingOptions = () => {
         target: searchContainer.value as HTMLDivElement,//  Loading需要覆盖的DOM节点或者选择器字符串，不设置就是全屏
         fullscreen: false,   //  是否全屏，配合target使用
         // lock:true,  //  是否在Loading 出现的时候锁定屏幕滚动(仅全屏时生效)
-        text: "正在查询，请稍候",  //    显示在加载图标下方的提示文字
+        text: "正在加载，请稍候",  //    显示在加载图标下方的提示文字
         // spinner:"", //  自定义加载图标的雷鸣，可配合第三方库(FontAwesome)
         background: 'rgba(255, 255, 255, 0.7)',    //  遮罩层的北京颜色
         // svg:"", //  自定义SVG 加载图标(一般可写svg代码)
@@ -297,16 +298,15 @@ function getPagesDate(page: number) {
 }
 
 
+
 /**
  *      编辑函数  --  特殊  --  数据回显
  */
 
+
 const dialogEditorVisible = ref<boolean>(false)
 const editorID = ref<number>(0)
 function handleEdit(index: number, row: rowType) {
-
-    //  loading 加载
-    const loadingInstance = ElLoading.service(loadingOptions())
 
     //      数据回显 拿到最新的数据  用 网络请求
     console.log(index, row);
@@ -334,8 +334,7 @@ function handleEdit(index: number, row: rowType) {
     }).catch(err => {
         console.log(err);
     }).finally(() => {
-        //  关闭 loading
-        loadingInstance.close()
+
     })
 
 }
@@ -613,6 +612,7 @@ const EditorFormInfo: infoType = reactive({
     status: "",
     remark: "",
 })
+
 //  编辑确定按钮 
 function EditorProjectInfo(value: infoType) {
     //  两个参数  1.  唯一id  --  我们编辑的时候能拿到 唯一 id    2. 文档数据( 编辑 的内容 )

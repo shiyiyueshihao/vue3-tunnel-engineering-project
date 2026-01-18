@@ -111,8 +111,11 @@ onMounted(() => {
     // 初始化 tinymce
     tinymce.init({})
 
-    //  拿到唯一 ID 再次网络请求 -- 预更新 即可拿到 remark 然后赋值
-    api.preFormInfo({ id: props.editorID }).then(res => {
+    /**
+     *      拿到唯一 ID 再次网络请求 -- 预更新 即可拿到 remark 然后赋值
+     *           _isWhitelisted: true  绕过拦截器的请求重复处理，避免重复请求被拦截
+     */
+    api.preFormInfo({ id: props.editorID, _isWhitelisted: true }).then(res => {
         if (res.data.status === 200) {
             textContent.value = res.data.result.remark
         }
