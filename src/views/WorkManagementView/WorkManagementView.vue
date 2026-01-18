@@ -85,7 +85,7 @@ import api from '@/api/index.ts'
  *          定义 卡牌内容 方便渲染数据
  */
 
- const planNum = ref<number>(0)
+const planNum = ref<number>(0)
 const superviseNum = ref<number>(0)
 const closeNum = ref<number>(0)
 const qualifyNum = ref<number>(0)
@@ -116,7 +116,7 @@ const cardData = reactive({
         {
             name: "green",
             text: "监督合格率",
-            num: qualifyNum , 
+            num: qualifyNum,
             remark: "质量受控水平",
             iconName: "icon-yewu_hege"
         },
@@ -473,6 +473,9 @@ function searchInfo() {
 
 function resertInfo() {
 
+    //  启动 查询按钮的 loading 效果
+    const loadingInstance = ElLoading.service(loadingOptions())
+
     // 清空所有内同
     startTime.value = ''
     endTime.value = ''
@@ -486,6 +489,9 @@ function resertInfo() {
 
     //  初始数据渲染一下
     initDataRander()
+
+    //  关闭查询效果的loading按钮
+    loadingInstance.close()
 }
 
 

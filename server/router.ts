@@ -58,7 +58,14 @@ const verifyToken = (req: AuthRequest, res: Response, next: NextFunction) => {
     if (!token) return res.status(401).send({ status: 401, msg: "未提供Token" });
 
     jwt.verify(token, process.env.JWT_ACCESS_SECRET as string, (err, decoded: any) => {
-        if (err) return res.status(403).send({ status: 403, msg: "Token已失效" });
+        if (err) {
+            // ✅ 关键修改：如果是过期 (TokenExpiredError)，返回 401
+            if (err.name === 'TokenExpiredError') {
+                return res.status(401).send({ status: 401, msg: "Token已过期" });
+            }
+            // 其他错误（如签名不对），返回 403
+            return res.status(403).send({ status: 403, msg: "Token无效" });
+        }
 
         // --- 【新增：校验 tick】 ---
         SQLConnect("SELECT last_login_tick FROM user WHERE id = ?", [decoded.id], (result) => {
