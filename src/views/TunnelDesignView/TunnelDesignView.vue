@@ -75,19 +75,19 @@
 
                         disabled (是否禁用)： 
              -->
-             <el-upload ref="upload" class="upload-demo" action="#" :limit="1" :show-file-list="true"
-             :before-upload="beforeUpload" :auto-upload="false" :on-preview="handlePreview" :on-change="handleChange"
-             :on-exceed="handleExceed">
-             <!-- 文件上传  需要 在 网络请求中做类型判断并不能格式化不然文件会出错(后端拿不到数据) -->
-             <template #trigger>
-                 <el-button type="primary">选择文件</el-button>
+            <el-upload ref="upload" class="upload-demo" action="#" :limit="1" :show-file-list="true"
+                :before-upload="beforeUpload" :auto-upload="false" :on-preview="handlePreview" :on-change="handleChange"
+                :on-exceed="handleExceed">
+                <!-- 文件上传  需要 在 网络请求中做类型判断并不能格式化不然文件会出错(后端拿不到数据) -->
+                <template #trigger>
+                    <el-button type="primary">选择文件</el-button>
                 </template>
                 <el-button class="ml-1" type="success" @click="submitUpload">上传文件</el-button>
                 <template #tip>
                     <div class="el-upload__tip text-red">只能上传一份文件，新文件会替换旧文件(限制png、jpg、jpeg、pdf)</div>
                 </template>
             </el-upload>
-            <el-progress :percentage="50" style="width: 430px;" />
+            <el-progress :percentage="progressPercentage" style="width: 430px;" />
         </el-dialog>
 
     </div>
@@ -287,7 +287,7 @@ const uploadFileInfo = ref()
  *              所有信息都可以在这里拿取   
 */
 //  存储内容 做无感刷新用
-const currentRowData = ref<Tree | null>(null) 
+const currentRowData = ref<Tree | null>(null)
 //  唯一 id 赋值
 //  级别 赋值
 function UploadHandler(row: Tree) {
@@ -403,7 +403,7 @@ const submitUpload = async () => { // 1. 必须使用 async
             console.log("数据为", currentRowData.value, "nodeInfo为", nodeInfo.value);
             if (currentRowData.value && nodeInfo.value) {
                 handleNodeClick(currentRowData.value, nodeInfo.value)
-            }   
+            }
 
             // 4. 上传成功后的清理工作
             dialogUploadVisible.value = false; // 关闭对话框
@@ -470,6 +470,26 @@ function PreviewHandler(row: Tree) {
  * 
  * 
 */
+
+
+//  上传 进度条  --  模拟
+let timer: number | null = null
+const progressPercentage = ref<number>(0)
+onMounted(() => {
+
+    timer = setInterval(function () {
+        if (progressPercentage.value <= 95) {
+            progressPercentage.value += 5
+        }
+    }, 500)
+
+})
+//  卸载清楚定时器 防止内存泄漏
+onUnmounted(() => {
+    if (timer) {
+        clearInterval(timer)
+    }
+})
 
 
 </script>
