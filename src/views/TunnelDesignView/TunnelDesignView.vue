@@ -318,17 +318,17 @@ const beforeUpload: UploadProps['beforeUpload'] = (rawFile) => {
     const extension = fileName.substring(fileName.lastIndexOf('.'));
 
     // 定义允许的后缀列表
-    const allowedExtensions = ['.jpg', '.jpeg', '.png', '.pdf'];
+    const allowedExtensions = ['.jpg', '.jpeg', '.png', '.pdf','.webp'];
 
     // 判断逻辑
     if (!allowedExtensions.includes(extension)) {
-        ElMessage.error('不是规定类型文件（仅支持 jpg/jpeg/png/pdf）！');
+        ElMessage.error('不是规定类型文件（仅支持 jpg/jpeg/png/pdf/webp）！');
         // 返回 false 会自动触发移除动作
         return false;
     }
 
-    if (rawFile.size / 1024 / 1024 > 10) {
-        ElMessage.error('文件不能超过10MB！');
+    if (rawFile.size / 1024 / 1024 > 500) {
+        ElMessage.error('文件不能超过500MB！');
         return false;
     }
 
@@ -379,7 +379,7 @@ const handleExceed: UploadProps['onExceed'] = (files, uploadFiles) => {
  */
 
 // 这里的data 就是 scope.row 
-const submitUpload = async () => { // 1. 必须使用 async
+const submitUpload = async () => { 
 
     let nodeType = ""
     if (nodeLevel.value === 2) {
@@ -388,23 +388,31 @@ const submitUpload = async () => { // 1. 必须使用 async
         nodeType = 'grand'
     }
 
-    // 校验：没选文件或者没获取到 ID 则不发请求
+    // 没选文件或者没获取到 ID 则不发请求
     if (!uploadFileInfo.value) {
         return ElMessage.error('请先选择文件！');
     }
 
     try {
-        // 2. 核心：调用 API 并传入参数
+
         console.log("准备发送请求：", { id: fileID.value, type: nodeType, file: uploadFileInfo.value });
 
+
+        /***
+         *          这里得做分片了  
+         *              首先我们需要  修改api  需要传入很多参数 
+         *                  fileID.value  --  sql的主id
+         *                  nodeType  --  等级  
+         * 
+         */
         const res = await api.tunnelUpload(fileID.value, nodeType, uploadFileInfo.value);
 
-        // 3. 处理后端返回的结果
+
         if (res.data.status === 200) {
             ElMessage.success('上传成功！');
-            // 查看后端返回的具体字段（根据你后端的逻辑）
-            console.log("文件存储路径：", res.data.url); // 对应后端的 filePath
-            console.log("成功消息：", res.data.msg);    // 对应后端的 '上传成功并关联至...'
+
+            console.log("文件存储路径：", res.data.url); 
+            console.log("成功消息：", res.data.msg);  
 
             // 无感刷新
             console.log("数据为", currentRowData.value, "nodeInfo为", nodeInfo.value);
@@ -412,7 +420,7 @@ const submitUpload = async () => { // 1. 必须使用 async
                 handleNodeClick(currentRowData.value, nodeInfo.value)
             }
 
-            // 4. 上传成功后的清理工作
+            // 上传成功后的清理工作
             dialogUploadVisible.value = false; // 关闭对话框
             uploadFileInfo.value = null;       // 清空临时文件变量
             upload.value!.clearFiles();         // 清除 el-upload 组件界面的显示
@@ -484,10 +492,9 @@ function PreviewHandler(row: Tree) {
  *                          或者局部更新节点数据），这样用户上传完就能立刻看到结果，不用手动刷新页面
  *        
  * 
- *         
- * 
- * 
 */
+
+
 
 
 //  上传 进度条  --  模拟

@@ -561,7 +561,7 @@ const upload = multer({
     // 限制文件类型（后缀名）
     fileFilter: (req, file, cb) => {
         // 允许的文件后缀名
-        const allowedTypes = ['.jpg', '.jpeg', '.png', '.pdf'];
+        const allowedTypes = ['.jpg', '.jpeg', '.png', '.pdf','.webp'];
         // 获取当前上传文件的后缀名
         const ext = path.extname(file.originalname).toLowerCase();
 
@@ -569,7 +569,7 @@ const upload = multer({
             cb(null, true); // 允许上传
         } else {
             // 拒绝上传并抛出错误
-            cb(new Error('仅支持上传 JPG/PNG/PDF 格式的文件！') as any, false);
+            cb(new Error('仅支持上传 图片和PDF 格式的文件！') as any, false);
         }
     }
 });

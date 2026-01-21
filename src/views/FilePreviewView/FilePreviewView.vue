@@ -49,14 +49,14 @@ const isPdf = computed(() => {
 });
 
 
-// 判断是否为图片 (jpg, jpeg, png, gif)
+// 判断是否为图片 (jpg, jpeg, png, webp)
 const isImage = computed(() => {
     if (!fileSrc) return false;
     const lowerSrc = fileSrc.toLowerCase();
     return lowerSrc.endsWith('.jpg') ||
         lowerSrc.endsWith('.jpeg') ||
         lowerSrc.endsWith('.png') ||
-        lowerSrc.endsWith('.gif');
+        lowerSrc.endsWith('.webp');
 });
 
 
