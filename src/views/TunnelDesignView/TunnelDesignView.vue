@@ -75,18 +75,19 @@
 
                         disabled (是否禁用)： 
              -->
-            <el-upload ref="upload" class="upload-demo" action="#" :limit="1" :show-file-list="true"
-                :before-upload="beforeUpload" :auto-upload="false" :on-preview="handlePreview" :on-change="handleChange"
-                :on-exceed="handleExceed">
-                <!-- 文件上传  需要 在 网络请求中做类型判断并不能格式化不然文件会出错(后端拿不到数据) -->
-                <template #trigger>
-                    <el-button type="primary">选择文件</el-button>
+             <el-upload ref="upload" class="upload-demo" action="#" :limit="1" :show-file-list="true"
+             :before-upload="beforeUpload" :auto-upload="false" :on-preview="handlePreview" :on-change="handleChange"
+             :on-exceed="handleExceed">
+             <!-- 文件上传  需要 在 网络请求中做类型判断并不能格式化不然文件会出错(后端拿不到数据) -->
+             <template #trigger>
+                 <el-button type="primary">选择文件</el-button>
                 </template>
                 <el-button class="ml-1" type="success" @click="submitUpload">上传文件</el-button>
                 <template #tip>
                     <div class="el-upload__tip text-red">只能上传一份文件，新文件会替换旧文件(限制png、jpg、jpeg、pdf)</div>
                 </template>
             </el-upload>
+            <el-progress :percentage="50" style="width: 430px;" />
         </el-dialog>
 
     </div>
