@@ -23,10 +23,17 @@
                 <el-table-column fixed="right" label="编辑" align="center" width="180">
                     <!-- 用 scope 那当前行的数据 -->
                     <template #default="scope">
-                        <div class="operation-wrapper">
+                        <div class="operation-wrapper" style="display: flex; gap: 10px; justify-content: center;">
+                            <!-- <a :href="`http://localhost:3000${scope.row.file_url}`" target="_blank">
+                                <el-button type="primary" size="small" v-show="scope.row.file_url">预览</el-button>
+                            </a> -->
+
+                            <!-- 文件预览按钮 -->
                             <el-button type="primary" size="small" @click="PreviewHandler(scope.row)"
                                 v-show="scope.row.file_url">预览</el-button>
-                            <el-button type="primary" size="small" @click="UploadHandler(scope.row)">上传</el-button>
+
+                            <el-button type="primary" size="small" @click="UploadHandler(scope.row)">{{
+                                scope.row.file_url ? '替换' : '上传' }}</el-button>
                         </div>
                     </template>
                 </el-table-column>
@@ -435,20 +442,31 @@ import router from '@/router'
 
 function PreviewHandler(row: Tree) {
 
-    router.push({
+    // router.push({
+    //     name: "filePrewview",
+    //     // params: {
+    //     //     fileSrc: fileSrc.value
+    //     // },
+    //     // 如果你使用 params 传参，必须在 router/index.ts 的 path 中定义占位符（例如 path: 'filePewview/:fileSrc' ），否则刷新页面参数会丢失。
+    //     // 更推荐使用 query，因为它就像 URL 里的搜索参数（?fileSrc=xxx），不需要额外配置路由表，且刷新页面参数依然存在。
+    //     query: {
+    //         fileSrc: row.file_url
+    //     }
+    // })
+
+    //  优化预览  --  路由跳转  用 resolve 生成一个合法的单页应用URL 用 window原生方法调用
+    const routeUrl = router.resolve({
         name: "filePrewview",
-        // params: {
-        //     fileSrc: fileSrc.value
-        // },
-        // 如果你使用 params 传参，必须在 router/index.ts 的 path 中定义占位符（例如 path: 'filePewview/:fileSrc' ），否则刷新页面参数会丢失。
-        // 更推荐使用 query，因为它就像 URL 里的搜索参数（?fileSrc=xxx），不需要额外配置路由表，且刷新页面参数依然存在。
         query: {
             fileSrc: row.file_url
         }
     })
 
-    console.log(row);
+    window.open(routeUrl.href, '_blank')
 
+    console.log(row.file_url);
+    console.log(routeUrl.href);
+    
 }
 
 
