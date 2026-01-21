@@ -556,7 +556,7 @@ const upload = multer({
     storage: storage,
     // 限制文件大小
     limits: {
-        fileSize: 10 * 1024 * 1024 // 限制为 10MB，单位是字节 (Byte)
+        fileSize: 5 * 1024 * 1024 // 限制为 5MB，单位是字节 (Byte)
     },
     // 限制文件类型（后缀名）
     fileFilter: (req, file, cb) => {

@@ -318,7 +318,7 @@ const beforeUpload: UploadProps['beforeUpload'] = (rawFile) => {
     const extension = fileName.substring(fileName.lastIndexOf('.'));
 
     // 定义允许的后缀列表
-    const allowedExtensions = ['.jpg', '.jpeg', '.png', '.pdf','.webp'];
+    const allowedExtensions = ['.jpg', '.jpeg', '.png', '.pdf', '.webp'];
 
     // 判断逻辑
     if (!allowedExtensions.includes(extension)) {
@@ -326,6 +326,13 @@ const beforeUpload: UploadProps['beforeUpload'] = (rawFile) => {
         // 返回 false 会自动触发移除动作
         return false;
     }
+
+    /**
+     *      这里要做文件切片处理
+     *          后端限制 单次上传5MB以内
+     *          
+     * 
+     */
 
     if (rawFile.size / 1024 / 1024 > 500) {
         ElMessage.error('文件不能超过500MB！');
@@ -379,7 +386,7 @@ const handleExceed: UploadProps['onExceed'] = (files, uploadFiles) => {
  */
 
 // 这里的data 就是 scope.row 
-const submitUpload = async () => { 
+const submitUpload = async () => {
 
     let nodeType = ""
     if (nodeLevel.value === 2) {
@@ -411,8 +418,8 @@ const submitUpload = async () => {
         if (res.data.status === 200) {
             ElMessage.success('上传成功！');
 
-            console.log("文件存储路径：", res.data.url); 
-            console.log("成功消息：", res.data.msg);  
+            console.log("文件存储路径：", res.data.url);
+            console.log("成功消息：", res.data.msg);
 
             // 无感刷新
             console.log("数据为", currentRowData.value, "nodeInfo为", nodeInfo.value);
@@ -474,7 +481,7 @@ function PreviewHandler(row: Tree) {
 
     console.log(row.file_url);
     console.log(routeUrl.href);
-    
+
 }
 
 
