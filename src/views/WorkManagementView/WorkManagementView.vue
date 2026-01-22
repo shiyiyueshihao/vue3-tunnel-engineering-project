@@ -86,9 +86,13 @@ import api from '@/api/index.ts'
  */
 
 const planNum = ref<number>(0)
+const planNumInfo = ref<number>(0)
 const superviseNum = ref<number>(0)
+const superviseNumIfo = ref<number>(0)
 const closeNum = ref<number>(0)
+const closeNumInfo = ref<number>(0)
 const qualifyNum = ref<number>(0)
+const qualifyNumInfo = ref<number>(0)
 
 const cardData = reactive({
     list: [
@@ -123,13 +127,6 @@ const cardData = reactive({
     ]
 })
 
-import { animateCount } from '@/utils/utils.ts';
-onMounted(() => {
-    animateCount(1250, 2000, planNum)
-    animateCount(35, 2000, superviseNum)
-    animateCount(18, 2000, closeNum)
-    animateCount(96.5, 2000, qualifyNum)
-})
 
 
 /**
@@ -270,33 +267,101 @@ const tableData: tableDataType = reactive({
 const totalCount = ref<number | undefined>(0)
 
 //  初始数据渲染函数
-function initDataRander() {
+async function initDataRander() {
     currentPage3.value = 1;
-    api.supervisionTotalCount().then(res => {
-        if (res.data.status === 200) {
-            console.log(res.data);
 
-            totalCount.value = res.data.total
+    try {
+        const resTotalCount = await api.supervisionTotalCount()
+        if (resTotalCount.data.status === 200) {
+            console.log(resTotalCount.data.total);
+            //  所有总数渲染
+            planNumInfo.value = resTotalCount.data.total
+
+            totalCount.value = resTotalCount.data.total
         }
-    })
 
-    //  页面加载 初始化 一次 表格
-    api.supervisionList(1).then(res => {
-        if (res.data.status === 200) {
-            console.log(res.data.result);
+        //  页面加载 初始化 一次 表格
+        const resList = await api.supervisionList(1)
+        if (resList.data.status === 200) {
+            console.log(resList.data.result);
 
-            tableData.list = res.data.result
+            tableData.list = resList.data.result
         }
-    }).catch(err => {
+    }
+    catch (err) {
         console.log(err);
-    })
+
+    }
 }
 
 
-onMounted(() => {
+/**
+ *      跳动数据渲染
+ */
+
+// 查询待办
+async function superviseNumIfoHandler() {
+
+    try {
+        const res = await api.supervisionSearch(null, null, null, "待检查", null, 1)
+        if (res.data.status === 200) {
+
+            superviseNumIfo.value = res.data.total;
+            console.log("待办为：", superviseNumIfo.value);
+        }
+    }
+    catch (err) {
+        console.log(err);
+    }
+}
+// 查询逾期
+async function closeNumInfoHandler() {
+
+    try {
+        const res = await api.supervisionSearch(null, null, null, "已逾期", null, 1)
+        if (res.data.status === 200) {
+            closeNumInfo.value = res.data.total;
+            console.log("已逾期：", closeNumInfo.value);
+        }
+    }
+    catch (err) {
+        console.log(err);
+    }
+}
+
+// 查询合格
+async function qualifyNumInfoHandler() {
+
+    try {
+        const res = await api.supervisionSearch(null, null, null, "已销项", null, 1)
+        if (res.data.status === 200) {
+            console.log("查询合格总数为：", res.data.total);
+            qualifyNumInfo.value = Number((Number(((res.data.total) / planNumInfo.value).toFixed(4)) * 100).toFixed(2));
+            console.log(qualifyNumInfo.value);
+        }
+    }
+    catch (err) {
+        console.log(err);
+    }
+}
+
+
+
+import { animateCount } from '@/utils/utils.ts';
+onMounted(async () => {
+
     //  初始数据渲染一下
-    initDataRander()
+    await initDataRander()
+    await superviseNumIfoHandler()
+    await closeNumInfoHandler()
+    await qualifyNumInfoHandler()
+
+    animateCount(planNumInfo, 2000, planNum)
+    animateCount(superviseNumIfo, 2000, superviseNum)
+    animateCount(closeNumInfo, 2000, closeNum)
+    animateCount(qualifyNumInfo, 2000, qualifyNum)
 })
+
 
 
 /**
@@ -432,6 +497,7 @@ function searchInfo() {
             if (res.data.result && res.data.result.length > 0) {
                 //  这个就是 查询之后的总长度
                 console.log(res.data.total);
+
 
                 totalCount.value = res.data.total
 

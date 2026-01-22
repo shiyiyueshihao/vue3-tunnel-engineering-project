@@ -6,7 +6,7 @@
             <el-icon class="box-icon" style="color:#409EFF">
                 <Notification />
             </el-icon>
-            <span class="box-text">隧道数量：<span>{{ tunnel }}</span> 个</span> 
+            <span class="box-text">隧道数量：<span>{{ tunnel }}</span> 个</span>
         </div>
         <div class="box">
             <el-icon class="box-icon" style="color:#67C23A">
@@ -140,15 +140,19 @@ onUnmounted(() => {
  */
 
 const tunnel = ref<number>(0)
-const check = ref<number> (0)
-const construction = ref<number >(0)
+const tunnelInfo = ref<number>(1000)
+const check = ref<number>(0)
+const checkInfo = ref<number>(805)
+const construction = ref<number>(0)
+const constructionInfo = ref<number>(302)
 const forecast = ref<number>(0)
+const forecastInfo = ref<number>(5000)
 import { animateCount } from "@/utils/utils";
 onMounted(() => {
-    animateCount(1000, 2000, tunnel);
-    animateCount(805, 2000, check);
-    animateCount(302, 2000, construction);
-    animateCount(5000, 2000, forecast);
+    animateCount(tunnelInfo, 2000, tunnel);
+    animateCount(checkInfo, 2000, check);
+    animateCount(constructionInfo, 2000, construction);
+    animateCount(forecastInfo, 2000, forecast);
 
 })
 
@@ -179,7 +183,8 @@ onMounted(() => {
 
         .box-text {
             font-size: 18px;
-            span{
+
+            span {
                 font-size: 25px;
                 font-weight: 700;
             }

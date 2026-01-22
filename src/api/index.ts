@@ -171,10 +171,10 @@ const api = {
      *      @param et  第一个下结束时间(可不填)  
      *      @param bd  第三个下拉框内容(可不填)  
      *      @param fx   第四个下拉框内容(可不填)   
-     *      @param content  第五个输入框内容(全局模糊查询 必填)   
+     *      @param content  第五个输入框内容(全局模糊查询)   
      *      @param page  页码数  分页查询  
     */
-    supervisionSearch(st: string | null | undefined, et: string | null | undefined, bd: string | null | undefined, fx: string | null | undefined, content: string, page: number) {
+    supervisionSearch(st: string | null | undefined, et: string | null | undefined, bd: string | null | undefined, fx: string | null | undefined, content: string | null, page: number) {
         return axios.get(base.baseURL + base.supervisionSearch, {
             params: {
                 st: st || '',       // 对应后端 query.st

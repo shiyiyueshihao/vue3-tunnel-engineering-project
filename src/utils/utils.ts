@@ -5,7 +5,7 @@
  *                   formatter	    用来格式化内容	  function (row: any, column: TableColumnCtx<T>, cellValue: any, index: number) => VNode | string
  * 
 */
-export function dataFormater(row: any|undefined, column: any|undefined, timestamp: any, index: number | undefined) {
+export function dataFormater(row: any | undefined, column: any | undefined, timestamp: any, index: number | undefined) {
     let date = new Date(timestamp)      //  创建实例对象
     const year = date.getFullYear();
     //  为了让  月份和日期 更好看 所以做了 转义+加0调整
@@ -28,14 +28,14 @@ export function dataFormater(row: any|undefined, column: any|undefined, timestam
  */
 import { ref, type Ref } from 'vue';
 
-export function animateCount(endValue: number, durationTime: number, currentValue: Ref<number>) {
+export function animateCount(endValue: Ref<number>, durationTime: number, currentValue: Ref<number>) {
 
     let startTime: number | null = null;//  定义起始时间为空  --  让系统记住一开始进来的时间
     //  初始数据 是“相对起点”，适合所有场景（包括第一次加载，因为初始值本来就是 0）
     const startValue = currentValue.value;
 
     //  判断小数点后有几位
-    const decimalPlaces = endValue.toString().split('.')[1]?.length
+    const decimalPlaces = endValue.value.toString().split('.')[1]?.length
 
     //  timestamp  由  rAF 提供   表当前时间(毫秒级别)
     function step(timestamp: number) {
@@ -61,20 +61,15 @@ export function animateCount(endValue: number, durationTime: number, currentValu
         const easeOut = 1 - Math.pow(1 - progress, 2);
 
         // 先计算出完整的浮点数值
-        const rawValue = startValue + (endValue - startValue) * easeOut;
+        const rawValue = startValue + (endValue.value - startValue) * easeOut;
 
-        //  经实验 不能这么写 因为动画会做很长的小数点跳动
-        // currentValue.value = rawValue
-        //    判断 endValue 是否为小数
-        if (decimalPlaces === 1) {
-            // 如果是小数：保留两位小数并转回数字
-            // 使用 parseFloat 配合 toFixed 可以去掉末尾多余的 0（比如 96.50 变成 96.5）
-            currentValue.value = parseFloat(rawValue.toFixed(1));
-        } else if (decimalPlaces === 2) {
-            currentValue.value = parseFloat(rawValue.toFixed(2));
+        //改进
+        const targetStr = endValue.value.toString();
+        const hasDecimal = targetStr.includes('.');
+        if (hasDecimal) {
+            currentValue.value = Number(rawValue.toFixed(2));
         } else {
-            // 如果是整数：直接向下取整
-            currentValue.value = Math.floor(rawValue);
+            currentValue.value = Math.floor(rawValue)
         }
 
         // 如果进度还没到 1，就请求下一帧
