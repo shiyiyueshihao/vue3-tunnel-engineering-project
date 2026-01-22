@@ -350,16 +350,26 @@ async function qualifyNumInfoHandler() {
 import { animateCount } from '@/utils/utils.ts';
 onMounted(async () => {
 
-    //  初始数据渲染一下
-    await initDataRander()
-    await superviseNumIfoHandler()
-    await closeNumInfoHandler()
-    await qualifyNumInfoHandler()
+    try {
+        await Promise.all([
+            //  初始数据渲染函数 并 渲染表格
+            initDataRander(),
+            superviseNumIfoHandler(),
+            closeNumInfoHandler(),
+            qualifyNumInfoHandler()
+        ])
 
-    animateCount(planNumInfo, 2000, planNum)
-    animateCount(superviseNumIfo, 2000, superviseNum)
-    animateCount(closeNumInfo, 2000, closeNum)
-    animateCount(qualifyNumInfo, 2000, qualifyNum)
+        animateCount(planNumInfo, 2000, planNum)
+        animateCount(superviseNumIfo, 2000, superviseNum)
+        animateCount(closeNumInfo, 2000, closeNum)
+        animateCount(qualifyNumInfo, 2000, qualifyNum)
+    }
+    catch (err) {
+        console.log(err);
+
+    }
+
+
 })
 
 
