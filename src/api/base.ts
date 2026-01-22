@@ -6,7 +6,7 @@
 const base = {
     baseURL: "http://localhost:3000",                  //      公共地址
     login: "/api/login",                                          //       登录地址
-    logout:"/api/logout",                                      //       退出登录
+    logout: "/api/logout",                                     //       退出登录
     router: "/api/router",                                      //       用户权限
     line: '/api/line',                                                //       获取 line  图表数据
     pie: '/api/pie',                                                 //        获取 pie 图表数据
@@ -20,12 +20,14 @@ const base = {
     tunnelList: "/api/tunnel/list",                           //        隧道设计信息  一级
     tunnelListChild: "/api/tunnel/list/child",         //         隧道设计信息  二级
     tunnelListGrandChild: "/api/tunnel/list/child/grandchild", //      隧道设计信息  三级
-    tunnelUpload:"/api/upload",                          //          隧道设计信息  文件上传
-    supervisionTotalCount:"/api/supervision/totalCount",//  工作监督管理 查询总条数
-    supervisionList:"/api/supervision/list",           //          工作监督管理分页查询
-    supervisionSearch:"/api/supervision/search",//          工作监督管理 ：组合筛选 + 全局模糊查询
-    supervisionSections:"/api/supervision/sections",//     工作监督管理 ：动态获取 所有标段
-    supervisionStatus:"/api/supervision/status", //           工作监督管理 ：动态获取 所有状态
+    tunnelUpload: "/api/upload",                          //          隧道设计信息  文件上传
+    tunnelUploadChunk: "/api/upload-chunk",               //          隧道设计信息  文件分片上传接口
+    tunnelMergeChunks: "/api/merge-chunks",              //          隧道设计信息  文件合并分片接口
+    supervisionTotalCount: "/api/supervision/totalCount",//  工作监督管理 查询总条数
+    supervisionList: "/api/supervision/list",           //          工作监督管理分页查询
+    supervisionSearch: "/api/supervision/search",//          工作监督管理 ：组合筛选 + 全局模糊查询
+    supervisionSections: "/api/supervision/sections",//     工作监督管理 ：动态获取 所有标段
+    supervisionStatus: "/api/supervision/status", //           工作监督管理 ：动态获取 所有状态
 }
 
 export default base

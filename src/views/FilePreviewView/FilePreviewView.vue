@@ -1,11 +1,12 @@
 <template>
-    <div class="preview-container">
-        <iframe v-if="isPdf" :src="`http://localhost:3000${fileSrc}`" frameborder="0" class="full-iframe"></iframe>
+    <div class="preview-container" ref="previewContainer">
+        <iframe v-if="isPdf" :src="`http://localhost:3000${fileSrc}`" frameborder="0" class="full-iframe"
+            @load="handleLoaded" @error="onResourceError"></iframe>
 
         <div v-else-if="isImage" class="image-wrapper">
             <el-image :src="`http://localhost:3000${fileSrc}`" fit="contain" class="full-img"
                 :preview-src-list="[`http://localhost:3000${fileSrc}`]" :initial-index="0" :hide-on-click-modal="true"
-                :preview-teleported="true">
+                :preview-teleported="true" @load="handleLoaded" @error="onResourceError">
                 <template #error>
                     <div class="image-slot">加载失败</div>
                 </template>
@@ -21,7 +22,40 @@
 
 <script setup lang="ts">
 
-import { computed } from 'vue';
+import { computed, handleError } from 'vue';
+import { ElLoading } from 'element-plus';
+const previewContainer = ref<HTMLDivElement | null>(null)
+const loadingInstance = ref<any>(null);
+const loadingOptions = () => {
+    return {
+        target: previewContainer.value || document.body,
+        fullscreen: !previewContainer.value,
+        text: "正在加载资源......",
+        background: 'rgba(255, 255, 255, 0.7)',
+    }
+}
+
+//  关闭 loading 函数
+const handleLoaded = () => {
+    loadingInstance.value?.close();
+};
+//  失败的回调：文件 404 或网络错误
+const onResourceError = () => {
+    console.error("加载失败");
+    if (loadingInstance.value) {
+        loadingInstance.value.close();
+    }
+};
+onMounted(async () => {
+    if (fileSrc) {
+        await nextTick();
+        //  开启 loading
+        loadingInstance.value = ElLoading.service(loadingOptions());
+
+        setTimeout(handleLoaded, 10000)
+    }
+
+})
 
 /** 
  *          预览 

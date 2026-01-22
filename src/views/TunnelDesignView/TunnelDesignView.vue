@@ -327,12 +327,6 @@ const beforeUpload: UploadProps['beforeUpload'] = (rawFile) => {
         return false;
     }
 
-    /**
-     *      这里要做文件切片处理
-     *          后端限制 单次上传5MB以内
-     *          
-     * 
-     */
 
     if (rawFile.size / 1024 / 1024 > 500) {
         ElMessage.error('文件不能超过500MB！');
@@ -384,7 +378,7 @@ const handleExceed: UploadProps['onExceed'] = (files, uploadFiles) => {
 /**
  *          提交上传 点击按钮之后会做 before-upload 检测  检测完毕之后触发该按钮事件
  */
-
+import { calculateFileHash } from '@/utils/utils'
 // 这里的data 就是 scope.row 
 const submitUpload = async () => {
 
@@ -406,14 +400,33 @@ const submitUpload = async () => {
 
 
         /***
-         *          这里得做分片了  
+         *          这里得做分片了  --  文件大于5MB分片 文件小于5MB 直接上传
          *              首先我们需要  修改api  需要传入很多参数 
          *                  fileID.value  --  sql的主id
          *                  nodeType  --  等级  
          * 
          */
-        const res = await api.tunnelUpload(fileID.value, nodeType, uploadFileInfo.value);
 
+        // 大于5MB 做分片
+        if (uploadFileInfo.value.size / 1024 / 1024 > 5) {
+
+            const file = uploadFileInfo.value
+            //  总文件hash  --  用SparkMD5
+            const fileHash = calculateFileHash(file)
+            //  当前分片索引
+            const fileIndex = 0
+            //  当前分片哈希
+            const fileChunkHash = ""
+
+            //  分片二进制数据  -- 初始
+            const fileChunkBlob = ''
+
+
+
+            // const res = await api.tunnelUploadChunk(fileHash,fileIndex,fileChunkHash,fileChunkBlob)
+        }
+
+        const res = await api.tunnelUpload(fileID.value, nodeType, uploadFileInfo.value);
 
         if (res.data.status === 200) {
             ElMessage.success('上传成功！');

@@ -629,6 +629,131 @@ router.post('/upload', verifyToken, (req: Request, res: Response) => {
 });
 
 
+// 基础配置
+import { fileURLToPath } from 'url';
+
+// 1. 获取当前文件的绝对路径
+const __filename = fileURLToPath(import.meta.url);
+
+// 2. 获取当前文件所在目录的绝对路径
+const __dirname = path.dirname(__filename);
+
+// 3. 定义你的 UPLOAD_DIR
+const UPLOAD_DIR = path.resolve(__dirname, '../uploads');
+
+/**
+ * 1. 分片上传接口
+ * 前端需要传递：file (文件切片), hash (文件唯一标识), index (当前是第几个片)
+ */
+router.post('/upload-chunk', verifyToken, (req: Request, res: Response) => {
+    upload.single('file')(req, res, async (err: any) => {
+        if (err) return res.send({ status: 500, msg: '上传失败' });
+
+        // 前端不仅要传 hash(总文件) 和 index(索引)，还要传 chunkHash(当前这片的MD5)
+        const { hash, index, chunkHash } = req.body; 
+        const chunkFile = req.file;
+
+        if (!chunkFile || !hash || !chunkHash) {
+            return res.send({ status: 500, msg: '缺少校验参数' });
+        }
+
+        // --- 核心逻辑：后端实时校验分片 MD5 ---
+        const buffer = await fs.readFile(chunkFile.path); // 读取刚上传的这片二进制数据
+        const actualChunkHash = crypto.createHash('md5').update(buffer).digest('hex');
+
+        if (actualChunkHash !== chunkHash) {
+            // 如果 MD5 对不上，说明传输过程中丢包或者被篡改了
+            await fs.unlink(chunkFile.path); // 删除这个损坏的临时文件
+            return res.send({ status: 400, msg: `第 ${index} 片校验失败，请重新上传` });
+        }
+        // ------------------------------------
+
+        const chunkDir = path.resolve(CHUNK_DIR, hash);
+        await fs.ensureDir(chunkDir);
+
+        // 校验通过，存盘
+        await fs.move(chunkFile.path, path.resolve(chunkDir, index.toString()), { overwrite: true });
+
+        res.send({ status: 200, msg: `切片 ${index} 校验并接收成功` });
+    });
+});
+
+/**
+ * 2. 合并分片接口
+ * 前端在所有分片传完后请求此接口
+ * 参数：hash, fileName, id, type (为了复用你的数据库逻辑)
+ */
+router.post('/merge-chunks', verifyToken, async (req: Request, res: Response) => {
+    const { hash, fileName, id, type } = req.body;
+
+    if (!hash || !fileName || !id || !type) {
+        return res.send({ status: 500, msg: '参数不完整' });
+    }
+
+    // 1. 确定最终存放路径
+    const ext = path.extname(fileName);
+    const finalFileName = `${Date.now()}-${hash}${ext}`; // 防止重名
+    const filePath = path.resolve(UPLOAD_DIR, finalFileName);
+    const chunkDir = path.resolve(CHUNK_DIR, hash);
+
+    // 2. 读取所有切片并排序
+    if (!fs.existsSync(chunkDir)) {
+        return res.send({ status: 500, msg: '切片目录不存在，无法合并' });
+    }
+
+    const chunkPaths = await fs.readdir(chunkDir);
+    // 必须按索引数字排序，否则合并出来文件会损坏
+    chunkPaths.sort((a, b) => parseInt(a) - parseInt(b));
+
+    // 3. 流式合并
+    const mergeTask = chunkPaths.map((chunkName, index) => {
+        return new Promise((resolve, reject) => {
+            const chunkPath = path.resolve(chunkDir, chunkName);
+            const readStream = fs.createReadStream(chunkPath);
+            const writeStream = fs.createWriteStream(filePath, {
+                start: index * (5 * 1024 * 1024), // 每片 5MB
+            });
+
+            readStream.pipe(writeStream);
+            readStream.on('end', () => {
+                // 读取完后可以删除该切片
+                fs.unlinkSync(chunkPath);
+                resolve(true);
+            });
+            readStream.on('error', (err) => reject(err));
+        });
+    });
+
+    try {
+        await Promise.all(mergeTask);
+        // 4. 合并完成后删除空文件夹
+        await fs.rmdir(chunkDir);
+
+        // --- 5. 复用你原本的数据库逻辑 ---
+        let tableName = '';
+        if (type === 'child') tableName = 'tunnelchild';
+        else if (type === 'grand') tableName = 'tunnelgrandchild';
+        else return res.send({ status: 500, msg: '错误的分类类型' });
+
+        const finalUrl = `/uploads/${finalFileName}`;
+        const sql = `UPDATE ${tableName} SET file_url = ? WHERE id = ?`;
+
+        SQLConnect(sql, [finalUrl, id], (result: any) => {
+            if (result && result.affectedRows > 0) {
+                res.send({ status: 200, msg: '合并并关联成功', url: finalUrl });
+            } else {
+                res.send({ status: 500, msg: '关联失败' });
+            }
+        });
+
+    } catch (e) {
+        res.send({ status: 500, msg: '合并文件失败', error: e });
+    }
+});
+
+
+
+
 /**
  *          工作监督管理查询 总数
  */
