@@ -1,17 +1,38 @@
 import axios from "axios";
 import type { AxiosInstance, InternalAxiosRequestConfig, AxiosResponse, Canceler } from "axios";
-import qs from "qs"; // 建议使用 qs 库
+import qs from "qs";
 import { useLoginStore } from "@/stores/loginStore";
-import { ElMessage } from "element-plus"; //  Element Plus 提示
+import { ElMessage } from "element-plus";
 
 /**
- * --- 【新增：防重复点击相关定义】 ---
+ * 扩展 Axios 配置，添加自定义字段
+ */
+declare module 'axios' {
+    export interface InternalAxiosRequestConfig {
+        _retry?: boolean;
+        skipCancelToken?: boolean;  // 跳过防重复检测
+        customIndex?: number;       // 分片索引（用于调试）
+    }
+}
+
+/**
+ * --- 【防重复点击相关定义】 ---
  */
 const pendingRequests = new Map<string, Canceler>();
 
 // 生成请求唯一的 key
 const getRequestKey = (config: InternalAxiosRequestConfig) => {
-    return [config.method, config.url, qs.stringify(config.params), qs.stringify(config.data)].join('&');
+    // 如果是 FormData（文件上传），不包含 data 在 key 中
+    const dataStr = config.data instanceof FormData 
+        ? 'formdata' 
+        : qs.stringify(config.data);
+    
+    return [
+        config.method, 
+        config.url, 
+        qs.stringify(config.params), 
+        dataStr
+    ].join('&');
 };
 
 // 移除并取消重复请求
@@ -19,14 +40,13 @@ const removePendingRequest = (config: InternalAxiosRequestConfig) => {
     const key = getRequestKey(config);
     if (pendingRequests.has(key)) {
         const cancel = pendingRequests.get(key);
-        cancel && cancel("Duplicate request"); // 取消之前的请求
+        cancel && cancel("Duplicate request");
         pendingRequests.delete(key);
     }
 };
 
 /**
- * 定义换票期间的请求队列类型
- * 每一个回调函数都接收一个新的 token 并重新发起请求
+ * 定义刷新令牌期间的请求队列类型
  */
 interface PendingRequest {
     (token: string): void;
@@ -42,8 +62,8 @@ let requestsQueue: PendingRequest[] = [];
  */
 const instance: AxiosInstance = axios.create({
     baseURL: "/api",
-    timeout: 10000, // 增加到 10s 比较稳妥
-    withCredentials: true, // 【关键】允许跨域携带 HttpOnly Cookie (存放 RefreshToken)
+    timeout: 60000, // 增加到 60s，大文件上传需要更长时间
+    withCredentials: true,
     headers: {
         'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8'
     }
@@ -54,11 +74,13 @@ const instance: AxiosInstance = axios.create({
  */
 instance.interceptors.request.use(
     (config: InternalAxiosRequestConfig) => {
-        // --- 【新增：拦截重复请求逻辑】 ---
-        removePendingRequest(config); // 检查是否有相同的请求在进行
-        config.cancelToken = new axios.CancelToken((c) => {
-            pendingRequests.set(getRequestKey(config), c);
-        });
+        // --- 【关键修改：分片上传跳过防重复检测】 ---
+        if (!config.skipCancelToken) {
+            removePendingRequest(config);
+            config.cancelToken = new axios.CancelToken((c) => {
+                pendingRequests.set(getRequestKey(config), c);
+            });
+        }
 
         const loginStore = useLoginStore();
         const token = loginStore.token;
@@ -70,11 +92,18 @@ instance.interceptors.request.use(
 
         // 2. 处理数据格式化
         if (config.data instanceof FormData) {
-            // 如果是文件上传，删除默认 Content-Type，让浏览器自动识别
-            if (config.headers) delete config.headers['Content-Type'];
+            // 如果是文件上传，删除默认 Content-Type，让浏览器自动设置
+            if (config.headers) {
+                delete config.headers['Content-Type'];
+            }
         } else if (config.method === "post" || config.method === "put") {
             // 普通对象进行序列化
             config.data = qs.stringify(config.data);
+        }
+
+        // 3. 调试信息（可选）
+        if (config.customIndex !== undefined) {
+            console.log(`[分片上传] 索引 ${config.customIndex} 开始请求`);
         }
 
         return config;
@@ -87,23 +116,30 @@ instance.interceptors.request.use(
  */
 instance.interceptors.response.use(
     (response: AxiosResponse) => {
-        // --- 【新增：请求成功，从队列中移除 key】 ---
-        removePendingRequest(response.config as InternalAxiosRequestConfig);
+        // --- 【请求成功，从队列中移除 key】 ---
+        if (!response.config.skipCancelToken) {
+            removePendingRequest(response.config as InternalAxiosRequestConfig);
+        }
 
-        // 后端逻辑成功则直接返回
+        // 调试信息（可选）
+        const config = response.config as InternalAxiosRequestConfig;
+        if (config.customIndex !== undefined) {
+            console.log(`[分片上传] 索引 ${config.customIndex} 上传成功`);
+        }
+
         return response;
     },
     async (error) => {
         const { config, response } = error;
 
-        // --- 【新增：如果是主动取消的请求，不弹出错误提示】 ---
+        // --- 【如果是主动取消的请求，不弹出错误提示】 ---
         if (axios.isCancel(error)) {
             console.warn("请求重复已拦截:", error.message);
-            return new Promise(() => {}); // 返回 pending 状态，不进入业务层的 catch
+            return new Promise(() => {}); // 返回 pending 状态
         }
 
-        // --- 【新增：请求失败也要移除 key】 ---
-        if (config) {
+        // --- 【请求失败也要移除 key】 ---
+        if (config && !config.skipCancelToken) {
             removePendingRequest(config);
         }
 
@@ -119,19 +155,19 @@ instance.interceptors.response.use(
                 return new Promise((resolve) => {
                     requestsQueue.push((newToken: string) => {
                         config.headers.Authorization = `Bearer ${newToken}`;
-                        resolve(instance(config)); // 换好票后重新执行
+                        resolve(instance(config));
                     });
                 });
             }
 
             // 如果没有在刷新，开启刷新流程
             isRefreshing = true;
-            config._retry = true; // 标记该请求已重试，防止死循环
+            config._retry = true;
 
             try {
-                // 调用刷新接口。注意：这里要用原始 axios 发送，避开实例拦截器
-                // 后端会根据请求里的 HttpOnly Cookie (RefreshToken) 校验身份
-                const refreshRes = await axios.post('/api/refresh', {}, { withCredentials: true });
+                const refreshRes = await axios.post('/api/refresh', {}, { 
+                    withCredentials: true 
+                });
                 const newToken = refreshRes.data.accessToken;
 
                 if (newToken) {
@@ -148,7 +184,6 @@ instance.interceptors.response.use(
                     return instance(config);
                 }
             } catch (refreshError) {
-                // 如果换票也失败了（RefreshToken 也过期了），彻底清空并跳登录
                 ElMessage.error("登录已过期，请重新登录");
                 loginStore.token = '';
                 localStorage.removeItem('token');
@@ -159,11 +194,10 @@ instance.interceptors.response.use(
             }
         }
         
-        // 2. 如果是 403，通常意味着 Token 彻底失效或重启导致密钥不匹配
+        // 2. 如果是 403，通常意味着 Token 彻底失效
         if (response && response.status === 403) {
             ElMessage.error("权限验证失败，请重新登录");
-            loginStore.token = ''; // 清空 Pinia
-            // 如果使用了 persist 插件，清空 store 就会自动同步到 localStorage
+            loginStore.token = '';
             window.location.href = '/login';
             return Promise.reject(error);
         }
@@ -178,12 +212,23 @@ instance.interceptors.response.use(
  * 通用错误处理提示
  */
 const handleGeneralError = (status: number | undefined, msg: string) => {
-    if (!status) return; // 避免在取消请求时弹出未知错误
+    if (!status) return;
+    
     switch (status) {
-        case 403: ElMessage.error("拒绝访问"); break;
-        case 404: ElMessage.error("请求地址不存在"); break;
-        case 500: ElMessage.error("服务器发生意外"); break;
-        default: ElMessage.error(msg || "未知错误");
+        case 403: 
+            ElMessage.error("拒绝访问"); 
+            break;
+        case 404: 
+            ElMessage.error("请求地址不存在"); 
+            break;
+        case 500: 
+            ElMessage.error("服务器发生意外"); 
+            break;
+        case 413:
+            ElMessage.error("文件过大");
+            break;
+        default: 
+            ElMessage.error(msg || "未知错误");
     }
 };
 

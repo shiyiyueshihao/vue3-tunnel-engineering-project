@@ -150,31 +150,42 @@ const api = {
     },
 
     /**
-     *      隧道文件分片上传接口
-     *          @param hash 总文件哈希
-     *          @param index 当前分片索引
-     *          @param chunkHash 当前分片哈希
-     *          @param chunkBlob 分片二进制数据
+     * 隧道文件 - 分片上传（>5MB）
+     * @param hash 总文件哈希
+     * @param index 当前分片索引
+     * @param chunkHash 当前分片哈希
+     * @param chunkBlob 分片二进制数据
      */
     tunnelUploadChunk(hash: string, index: number, chunkHash: string, chunkBlob: Blob) {
         const formData = new FormData();
         formData.append('hash', hash);
         formData.append('index', String(index));
         formData.append('chunkHash', chunkHash);
-        formData.append('file', chunkBlob); // 对应后端 upload.single('file')
+        formData.append('file', chunkBlob);
 
-        return axios.post(base.baseURL + base.tunnelUploadChunk, formData);
+        return axios.post(base.baseURL + base.tunnelUploadChunk, formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data'
+            },
+            timeout: 30000, // 单个分片超时时间 30 秒
+            customIndex: index, // 调试用
+            skipCancelToken: true // 跳过防重复检测（关键！）
+        } as any);
     },
+
     /**
-    *       隧道文件合并接口
-    *           @param hash 总文件哈希
-    *           @param fileName 用户上传时的原始文件名
-    *           @param id 唯一id
-    *           @param type 类型 ('child' 或 'grand')
-    */
-    tunnelMergeChunks(params: { hash: string, fileName: string, id: number, type: string }) {
-        // 合并接口不需要 FormData，直接传普通对象即可
-        return axios.post(base.baseURL + base.tunnelMergeChunks, params);
+     * 隧道文件 - 合并分片
+     * @param params 合并参数
+     */
+    tunnelMergeChunks(params: {
+        hash: string;
+        fileName: string;
+        id: number;
+        type: string;
+    }) {
+        return axios.post(base.baseURL + base.tunnelMergeChunks, params, {
+            timeout: 60000 // 合并可能需要较长时间
+        });
     },
     /**
      *          工作监督管理 查询总条数

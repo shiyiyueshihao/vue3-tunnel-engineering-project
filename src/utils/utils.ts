@@ -90,9 +90,9 @@ export function animateCount(endValue: Ref<number>, durationTime: number, curren
 import SparkMD5 from 'spark-md5'
 
 /**
- * calculateFileHash: 计算文件总 MD5
- * @param file 原始 File 对象
- * @param chunkSize 切片计算的大小（ 5MB）
+ *      calculateFileHash: 计算文件总 MD5
+ *            @param file 原始 File 对象
+ *            @param chunkSize 切片计算的大小（ 5MB）
  */
 export function calculateFileHash(file: File, chunkSize: number = 5 * 1024 * 1024): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -130,19 +130,55 @@ export function calculateFileHash(file: File, chunkSize: number = 5 * 1024 * 102
 
 
 /**
- *      分片处理 返回分片数组 (Blob对象数组)
- *          @param file 分片总文件
+ * 读取 Blob 内容并计算 MD5
  */
+function getChunkHash(chunk: Blob): Promise<string> {
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.readAsArrayBuffer(chunk);
+    reader.onload = (e) => {
+      const spark = new SparkMD5.ArrayBuffer();
+      spark.append(e.target?.result as ArrayBuffer);
+      resolve(spark.end());
+    };
+  });
+}
 
-export function shardHandler(file: File): Blob[] {
-  const fileArr: Blob[] = []
-  // 将总文件按照5MB分解然后逐个加入
-  const chunkSize = 5 * 1024 * 1024
-  let cur = 0
+// 定义返回的对象结构
+interface ChunkInfo {
+  index: number;
+  hash: string;
+  chunk: Blob;
+}
+
+/**
+ *    分片并计算每个分片的哈希
+ *        @param file 总文件
+ *        @param chunkSize 分片大小（默认5MB）
+ */
+export async function calculateChunksWithHash(
+  file: File,
+  chunkSize: number = 5 * 1024 * 1024
+): Promise<ChunkInfo[]> {
+  const chunks: ChunkInfo[] = [];
+  let cur = 0;
+  let index = 0;
+
   while (cur < file.size) {
-    fileArr.push(file.slice(cur, cur + chunkSize));
-    cur += chunkSize
+    const chunk = file.slice(cur, cur + chunkSize);
+
+    // 计算当前分片的哈希
+    const hash = await getChunkHash(chunk);
+
+    chunks.push({
+      index,
+      hash,
+      chunk
+    });
+
+    cur += chunkSize;
+    index++;
   }
 
-  return fileArr
+  return chunks;
 }

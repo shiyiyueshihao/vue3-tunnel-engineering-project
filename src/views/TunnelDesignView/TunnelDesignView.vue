@@ -94,7 +94,7 @@
                     <div class="el-upload__tip text-red">只能上传一份文件，新文件会替换旧文件(限制png、jpg、jpeg、pdf)</div>
                 </template>
             </el-upload>
-            <el-progress :percentage="progressPercentage" style="width: 430px;" />
+            <el-progress :percentage="progressPercentage" v-if="progressPercentage" style="width: 430px;" />
         </el-dialog>
 
     </div>
@@ -378,9 +378,54 @@ const handleExceed: UploadProps['onExceed'] = (files, uploadFiles) => {
 /**
  *          提交上传 点击按钮之后会做 before-upload 检测  检测完毕之后触发该按钮事件
  */
-import { calculateFileHash } from '@/utils/utils'
+import { calculateChunksWithHash, calculateFileHash } from '@/utils/utils'
+
+//  上传完成数量
+const finishCount = ref<number>(0)
+//  文件总数量
+const fileCount = ref<number>(0)
+//  上传 进度条
+const progressPercentage = computed(() => {
+
+    if (fileCount.value === 0) return 0;
+
+    return Math.round((finishCount.value / fileCount.value) * 100);
+})
+
+// 是否正在上传
+const isUploading = ref<boolean>(false)
+
+
+//  定义分片小组的类型
+interface listInfo {
+    index: number,
+    hash: string,
+    chunk: Blob,    //  文件二进制 
+}
+
+
+
+/**
+ * 
+ *          1.  进度条之前的 分片等待 await  需要做loading  +  合并之前都需要完全警用上传按钮 
+ *          2.  上传关闭就不上传取消 并且全部都清空 -- 这里的逻辑还没做 
+ *          3.  大文件上传完毕之后 关闭 的时候 需要刷新页面  也就是重加载  
+ *          4.  上传完毕需要做提醒 --  上传成功
+ * 
+ * 
+ */
+
+
+
+
+
 // 这里的data 就是 scope.row 
 const submitUpload = async () => {
+
+    // 防止重复点击
+    if (isUploading.value) {
+        return ElMessage.warning('正在上传中，请稍候...');
+    }
 
     let nodeType = ""
     if (nodeLevel.value === 2) {
@@ -398,55 +443,107 @@ const submitUpload = async () => {
 
         console.log("准备发送请求：", { id: fileID.value, type: nodeType, file: uploadFileInfo.value });
 
-
         /***
-         *          这里得做分片了  --  文件大于5MB分片 文件小于5MB 直接上传
-         *              首先我们需要  修改api  需要传入很多参数 
          *                  fileID.value  --  sql的主id
          *                  nodeType  --  等级  
-         * 
          */
 
         // 大于5MB 做分片
         if (uploadFileInfo.value.size / 1024 / 1024 > 5) {
 
             const file = uploadFileInfo.value
+            console.log(file);
+
             //  总文件hash  --  用SparkMD5
-            const fileHash = calculateFileHash(file)
-            //  当前分片索引
-            const fileIndex = 0
-            //  当前分片哈希
-            const fileChunkHash = ""
+            const fileHash = await calculateFileHash(file)
+            //  所有分片哈希
+            const fileChunksHash = await calculateChunksWithHash(file)
 
-            //  分片二进制数据  -- 初始
-            const fileChunkBlob = ''
+            console.log("总文件hash：", fileHash);
+            console.log("分片hash：", fileChunksHash);
 
+            //  复制一份 所有分片哈希
+            const arr = fileChunksHash
 
+            //  总数量 赋值
+            fileCount.value = arr.length
+            //  设置每次上传的数量  --  三个
+            const chunkSize = 3
 
-            // const res = await api.tunnelUploadChunk(fileHash,fileIndex,fileChunkHash,fileChunkBlob)
-        }
+            //  每次 收 三个所以步频也是3   i+=3
+            for (let i = 0; i < arr.length; i += chunkSize) {
 
-        const res = await api.tunnelUpload(fileID.value, nodeType, uploadFileInfo.value);
+                //  三个分片数据存放地址
+                const list: listInfo[] = arr.slice(i, i + chunkSize)
 
-        if (res.data.status === 200) {
-            ElMessage.success('上传成功！');
+                //  综合 三个任务   需要用map  foreach会返回undefined
+                const tasks = (fileHash: string, list: listInfo[]) => {
 
-            console.log("文件存储路径：", res.data.url);
-            console.log("成功消息：", res.data.msg);
+                    return list.map(element => {
+                        return api.tunnelUploadChunk(fileHash, element.index, element.hash, element.chunk).then(res => {
+                            console.log("后端返回的内容", res.data);
 
-            // 无感刷新
-            console.log("数据为", currentRowData.value, "nodeInfo为", nodeInfo.value);
-            if (currentRowData.value && nodeInfo.value) {
-                handleNodeClick(currentRowData.value, nodeInfo.value)
+                            if (res.data.status === 200) {
+                                finishCount.value++
+                                return res
+                            } else {
+                                console.error(`分片索引 ${element.index} 处理失败:`, res.data.msg);
+                                throw new Error(res.data.msg);
+                            }
+                        })
+                    });
+
+                }
+
+                // 执行并发上传
+                const results = await Promise.all(tasks(fileHash, list));
+
+                // 检验
+                const isAllSuccess = results.every(response => response?.data.status === 200);
+
+                if (isAllSuccess) {
+                    console.log("这一组分片全部校验通过并存储成功");
+                } else {
+                    console.error("这一组分片中存在处理失败的情况");
+                }
+
+                console.log(`第${Math.floor(i / 3) + 1} 组(3片)已完成`);
             }
 
-            // 上传成功后的清理工作
-            dialogUploadVisible.value = false; // 关闭对话框
-            uploadFileInfo.value = null;       // 清空临时文件变量
-            upload.value!.clearFiles();         // 清除 el-upload 组件界面的显示
+            console.log("分片全部上传完成，接下来开始合并");
 
+            const res = await api.tunnelMergeChunks({
+                hash: fileHash,
+                fileName: file.name,
+                id: fileID.value,
+                type: nodeType
+            })
+
+        } else if (uploadFileInfo.value.size / 1024 / 1024 <= 5) {
+            const res = await api.tunnelUpload(fileID.value, nodeType, uploadFileInfo.value);
+
+            if (res.data.status === 200) {
+                ElMessage.success('上传成功！');
+
+                console.log("文件存储路径：", res.data.url);
+                console.log("成功消息：", res.data.msg);
+
+                // 无感刷新
+                console.log("数据为", currentRowData.value, "nodeInfo为", nodeInfo.value);
+                if (currentRowData.value && nodeInfo.value) {
+                    handleNodeClick(currentRowData.value, nodeInfo.value)
+                }
+
+                // 上传成功后的清理工作
+                dialogUploadVisible.value = false; // 关闭对话框
+                uploadFileInfo.value = null;       // 清空临时文件变量
+                upload.value!.clearFiles();         // 清除 el-upload 组件界面的显示
+
+            } else {
+                ElMessage.error(res.data.msg || '服务器返回错误');
+            }
         } else {
-            ElMessage.error(res.data.msg || '服务器返回错误');
+
         }
     } catch (error) {
         console.error("上传接口调用失败：", error);
@@ -513,28 +610,6 @@ function PreviewHandler(row: Tree) {
  *        
  * 
 */
-
-
-
-
-//  上传 进度条  --  模拟
-let timer: number | null = null
-const progressPercentage = ref<number>(0)
-onMounted(() => {
-
-    timer = setInterval(function () {
-        if (progressPercentage.value <= 95) {
-            progressPercentage.value += 5
-        }
-    }, 500)
-
-})
-//  卸载清楚定时器 防止内存泄漏
-onUnmounted(() => {
-    if (timer) {
-        clearInterval(timer)
-    }
-})
 
 
 </script>
