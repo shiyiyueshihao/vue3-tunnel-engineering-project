@@ -39,4 +39,5 @@ __screenshots__/
 
 sql/
 
-server/uploads
+# 忽略 server 目录下的 uploads 文件夹
+/server/uploads/
