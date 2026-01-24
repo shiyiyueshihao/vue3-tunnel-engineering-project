@@ -415,7 +415,20 @@ interface listInfo {
  * 
  */
 
+//  上传成功之后的 处理函数
+function successUpload() {
+    ElMessage.success('上传成功！');
+    // 无感刷新
+    console.log("数据为", currentRowData.value, "nodeInfo为", nodeInfo.value);
+    if (currentRowData.value && nodeInfo.value) {
+        handleNodeClick(currentRowData.value, nodeInfo.value)
+    }
 
+    // 上传成功后的清理工作
+    dialogUploadVisible.value = false; // 关闭对话框
+    uploadFileInfo.value = null;       // 清空临时文件变量
+    upload.value!.clearFiles();         // 清除 el-upload 组件界面的显示
+}
 
 
 
@@ -519,25 +532,34 @@ const submitUpload = async () => {
                 type: nodeType
             })
 
+            if (res.data.status === 200) {
+
+                console.log("合并完成");
+
+                successUpload()
+            }
+
+
         } else if (uploadFileInfo.value.size / 1024 / 1024 <= 5) {
             const res = await api.tunnelUpload(fileID.value, nodeType, uploadFileInfo.value);
 
             if (res.data.status === 200) {
-                ElMessage.success('上传成功！');
+
 
                 console.log("文件存储路径：", res.data.url);
                 console.log("成功消息：", res.data.msg);
 
-                // 无感刷新
-                console.log("数据为", currentRowData.value, "nodeInfo为", nodeInfo.value);
-                if (currentRowData.value && nodeInfo.value) {
-                    handleNodeClick(currentRowData.value, nodeInfo.value)
-                }
+                // // 无感刷新
+                // console.log("数据为", currentRowData.value, "nodeInfo为", nodeInfo.value);
+                // if (currentRowData.value && nodeInfo.value) {
+                //     handleNodeClick(currentRowData.value, nodeInfo.value)
+                // }
 
-                // 上传成功后的清理工作
-                dialogUploadVisible.value = false; // 关闭对话框
-                uploadFileInfo.value = null;       // 清空临时文件变量
-                upload.value!.clearFiles();         // 清除 el-upload 组件界面的显示
+                // // 上传成功后的清理工作
+                // dialogUploadVisible.value = false; // 关闭对话框
+                // uploadFileInfo.value = null;       // 清空临时文件变量
+                // upload.value!.clearFiles();         // 清除 el-upload 组件界面的显示
+                successUpload()
 
             } else {
                 ElMessage.error(res.data.msg || '服务器返回错误');
